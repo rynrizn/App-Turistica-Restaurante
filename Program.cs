@@ -1,5 +1,7 @@
 using RestauranteTuristicoApp.Components;
 using MudBlazor.Services;
+using Microsoft.EntityFrameworkCore; 
+// using RestauranteTuristicoApp.Models; 
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +10,9 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 builder.Services.AddMudServices();
+
+// builder.Services.AddDbContextFactory<DbHrContext>(options => 
+// options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
