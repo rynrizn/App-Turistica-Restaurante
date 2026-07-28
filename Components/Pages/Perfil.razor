@@ -4,10 +4,11 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using RestauranteTuristicoApp.Models
 @using RestauranteTuristicoApp.Services
-@inject ISnackbar Snackbar
+@inject ToastService Toast
 @inject NavigationManager Navigation
 @inject ReservaService ReservaService
 @inject UsuarioService UsuarioService
+@inject ResenaService ResenaService
 @inject AuthenticationStateProvider AuthStateProvider
 @rendermode InteractiveServer
 
@@ -15,202 +16,299 @@
 
 @if (_cargando)
 {
-    <div class="text-center py-12">
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-        <MudText Class="mt-3">Cargando su perfil...</MudText>
+    <div class="text-center py-5">
+        <div class="spinner-border text-danger" role="status"></div>
+        <p class="text-muted mt-2">Cargando su perfil...</p>
     </div>
 }
 else if (_usuario == null)
 {
-    <MudAlert Severity="Severity.Error" Class="my-6">
+    <div class="alert alert-danger my-4">
         No se pudo obtener la información de su usuario. Intente iniciar sesión nuevamente.
-    </MudAlert>
+    </div>
 }
 else
 {
     <!-- HEADER RESUMEN DEL USUARIO -->
-    <MudCard Class="sabor-card pa-6 mb-6" Elevation="4" Style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
-        <MudGrid Class="align-center">
-            <MudItem xs="12" sm="3" md="2" Class="text-center">
-                <MudAvatar Color="Color.Secondary" Style="width: 86px; height: 86px; font-size: 2rem; font-weight: bold; background-color: #fed65b; color: #735c00; box-shadow: 0 8px 24px rgba(115, 92, 0, 0.2);">
+    <div class="card sabor-card p-4 p-md-5 mb-4 border-0 shadow-sm">
+        <div class="row align-items-center">
+            <div class="col-12 col-sm-3 col-md-2 text-center mb-3 mb-sm-0">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold fs-2"
+                     style="width: 86px; height: 86px; background-color: #fed65b; color: #735c00; box-shadow: 0 8px 24px rgba(115, 92, 0, 0.2);">
                     @GetIniciales(_usuario.Nombres, _usuario.Apellidos)
-                </MudAvatar>
-            </MudItem>
-            
-            <MudItem xs="12" sm="6" md="7">
-                <div class="d-flex align-center flex-wrap gap-2 mb-1">
-                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+                </div>
+            </div>
+
+            <div class="col-12 col-sm-9 col-md-10">
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                    <h2 class="font-playfair fw-bold mb-0" style="color: var(--sabor-burgundy);">
                         @_usuario.Nombres @_usuario.Apellidos
-                    </MudText>
-                    <MudChip T="string" Size="Size.Small" Class="sabor-chip-gold">
+                    </h2>
+                    <span class="badge sabor-chip-gold px-3 py-1">
                         ★ @(_usuario.Rol?.Nombre?.ToUpper() ?? "CLIENTE") ORO
-                    </MudChip>
+                    </span>
                 </div>
-                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                <p class="text-muted mb-3">
                     @_usuario.Email · Valle de la Concepción, Tarija
-                </MudText>
-                <div class="d-flex flex-wrap gap-3">
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Icon="@Icons.Material.Filled.WineBar">
-                        Vino preferido: Tannat Reserva
-                    </MudChip>
-                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" Icon="@Icons.Material.Filled.TableBar">
-                        Reservas registradas: @_reservas.Count
-                    </MudChip>
+                </p>
+                <div class="d-flex flex-wrap gap-4 text-muted small">
+                    <div>
+                        <strong style="color: var(--sabor-burgundy);">@_reservas.Count</strong> Reservas Registradas
+                    </div>
+                    <div>
+                        <strong style="color: var(--sabor-burgundy);">@_reservas.Count(r => r.Estado == "Confirmada" || r.Estado == "Completada")</strong> Visitas Concretadas
+                    </div>
+                    <div>
+                        <strong style="color: var(--sabor-burgundy);">Socio VIP</strong> Desde @DateTime.Now.Year
+                    </div>
                 </div>
-            </MudItem>
+            </div>
+        </div>
+    </div>
 
-            <MudItem xs="12" sm="3" md="3" Class="text-center text-md-right">
-                <div class="pa-3 rounded-lg" style="background: rgba(97, 0, 0, 0.05); border: 1px solid rgba(142, 112, 107, 0.2);">
-                    <MudText Typo="Typo.caption" Style="color: #5a403c; text-transform: uppercase;">Estado de Cuenta</MudText>
-                    <MudText Typo="Typo.h5" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">Activo</MudText>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="mt-1"
-                               OnClick="@(() => Navigation.NavigateTo("mis-reservas"))">
-                        Ver reservas →
-                    </MudButton>
-                </div>
-            </MudItem>
-        </MudGrid>
-    </MudCard>
+    <!-- PESTAÑAS DE BOOTSTRAP -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <button type="button" class="nav-link @(_tabIndex == 0 ? "active fw-bold text-dark" : "text-muted")"
+                    @onclick="() => SetTab(0)">
+                <i class="bi bi-calendar-check me-2"></i>Mis Reservaciones (@_reservas.Count)
+            </button>
+        </li>
+        <li class="nav-item">
+            <button type="button" class="nav-link @(_tabIndex == 1 ? "active fw-bold text-dark" : "text-muted")"
+                    @onclick="() => SetTab(1)">
+                <i class="bi bi-gear me-2"></i>Configuración del Perfil
+            </button>
+        </li>
+        <li class="nav-item">
+            <button type="button" class="nav-link @(_tabIndex == 2 ? "active fw-bold text-dark" : "text-muted")"
+                    @onclick="() => SetTab(2)">
+                <i class="bi bi-heart me-2"></i>Cava & Favoritos
+            </button>
+        </li>
+        <li class="nav-item">
+            <button type="button" class="nav-link @(_tabIndex == 3 ? "active fw-bold text-dark" : "text-muted")"
+                    @onclick="() => SetTab(3)">
+                <i class="bi bi-star-fill me-2 text-warning"></i>Mis Reseñas (@_misResenas.Count)
+            </button>
+        </li>
+    </ul>
 
-    <!-- PESTAÑAS DEL PERFIL -->
-    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Color="Color.Primary" Class="pa-2 pa-md-4">
-        
-        <!-- TAB 1: RESERVAS -->
-        <MudTabPanel Text="Mis Reservas" Icon="@Icons.Material.Filled.EventAvailable">
-            <div class="d-flex justify-space-between align-center my-4">
-                <MudText Typo="Typo.h5" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
-                    Historial de Reservas
-                </MudText>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="@(() => Navigation.NavigateTo("reservas/nueva"))"
-                           Class="sabor-bg-burgundy" Style="border-radius: 8px; font-weight: 600;">
-                    NUEVA RESERVA
-                </MudButton>
+    <!-- CONTENIDO TAB 0: MIS RESERVACIONES -->
+    @if (_tabIndex == 0)
+    {
+        @if (!_reservas.Any())
+        {
+            <div class="alert alert-info py-4 text-center">
+                Aún no cuenta con historial de reservaciones en nuestro restaurante.
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var res in _reservas)
+                {
+                    var mesaNum = res.ReservaMesas.FirstOrDefault()?.Mesa?.NumeroMesa.ToString() ?? "N/A";
+                    <div class="col-12 col-md-6">
+                        <div class="card sabor-card h-100 p-4 border-0 shadow-sm border-start border-4" style="border-left-color: var(--sabor-burgundy) !important;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="font-playfair fw-bold mb-0">Mesa #@mesaNum</h6>
+                                    <small class="text-muted">Código: <strong>@res.CodigoReserva</strong></small>
+                                </div>
+                                <span class="badge @GetBadgeClass(res.Estado)">
+                                    @res.Estado
+                                </span>
+                            </div>
+
+                            <hr class="my-2" />
+
+                            <p class="mb-1 small">
+                                <i class="bi bi-calendar-event me-2 text-danger"></i>
+                                <strong>@res.FechaReserva.ToString("dd/MM/yyyy")</strong> a las <strong>@res.HoraReserva.ToString("hh\\:mm")</strong>
+                            </p>
+                            <p class="mb-1 small">
+                                <i class="bi bi-people me-2 text-danger"></i>
+                                @res.CantidadPersonas comensales
+                            </p>
+
+                            @if (res.Estado == "Pendiente" || res.Estado == "Confirmada")
+                            {
+                                <div class="d-flex justify-content-end mt-3 pt-2 border-top">
+                                    <button type="button" class="btn btn-outline-danger btn-sm"
+                                            @onclick="() => CancelarReserva(res)">
+                                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
+
+    <!-- CONTENIDO TAB 1: CONFIGURACIÓN DEL PERFIL -->
+    @if (_tabIndex == 1)
+    {
+        <div class="card sabor-card p-4 border-0 shadow-sm" style="max-width: 680px;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="font-playfair fw-bold mb-0" style="color: var(--sabor-burgundy);">
+                    Información Personal
+                </h5>
+                @if (!_modoEdicion)
+                {
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-3 px-3"
+                            @onclick="() => _modoEdicion = true">
+                        <i class="bi bi-pencil me-1"></i>Editar Perfil
+                    </button>
+                }
             </div>
 
-            @if (!_reservas.Any())
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-sm-6">
+                    <label class="form-label fw-semibold">Nombres</label>
+                    <input type="text" class="form-control" @bind="_usuario.Nombres" disabled="@(!_modoEdicion)" />
+                </div>
+                <div class="col-12 col-sm-6">
+                    <label class="form-label fw-semibold">Apellidos</label>
+                    <input type="text" class="form-control" @bind="_usuario.Apellidos" disabled="@(!_modoEdicion)" />
+                </div>
+                <div class="col-12 col-sm-6">
+                    <label class="form-label fw-semibold">Correo Electrónico (Solo Lectura)</label>
+                    <input type="email" class="form-control" value="@_usuario.Email" disabled />
+                </div>
+                <div class="col-12 col-sm-6">
+                    <label class="form-label fw-semibold">Teléfono / Celular</label>
+                    <input type="tel" class="form-control" @bind="_usuario.Telefono" disabled="@(!_modoEdicion)" />
+                </div>
+            </div>
+
+            @if (_modoEdicion)
             {
-                <MudAlert Severity="Severity.Info" Class="my-4">No tiene reservaciones registradas.</MudAlert>
+                <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2" @onclick="CancelarEdicion">
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger px-4 py-2" @onclick="GuardarCambios">
+                        <i class="bi bi-check-lg me-2"></i>Guardar Cambios
+                    </button>
+                </div>
             }
-            else
-            {
-                <MudGrid Spacing="3">
-                    @foreach (var res in _reservas)
+        </div>
+    }
+
+    <!-- CONTENIDO TAB 2: CAVA & FAVORITOS -->
+    @if (_tabIndex == 2)
+    {
+        <div class="card sabor-card p-4 border-0 shadow-sm text-center py-5">
+            <i class="bi bi-wine fs-1 text-warning mb-2 d-inline-block"></i>
+            <h5 class="font-playfair fw-bold" style="color: var(--sabor-burgundy);">
+                Mi Selección de Vinos de Altura
+            </h5>
+            <p class="text-muted small mx-auto" style="max-width: 500px;">
+                Sus vinos y platillos favoritos guardados en la carta aparecerán aquí en sus próximas visitas al restaurante.
+            </p>
+        </div>
+    }
+
+    <!-- CONTENIDO TAB 3: MIS RESEÑAS -->
+    @if (_tabIndex == 3)
+    {
+        <div class="card sabor-card p-4 border-0 shadow-sm mb-4">
+            <h5 class="fw-bold mb-3" style="color: var(--sabor-burgundy);">Comparta su Experiencia</h5>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Puntuación</label>
+                <div>
+                    @for (int i = 1; i <= 5; i++)
                     {
-                        var mesaNum = res.ReservaMesas.FirstOrDefault()?.Mesa?.NumeroMesa.ToString() ?? "N/A";
-                        <MudItem xs="12" md="6">
-                            <MudCard Class="sabor-card pa-4" Elevation="2" Style="border-left: 4px solid #610000 !important;">
-                                <div class="d-flex justify-space-between align-start mb-2">
-                                    <div>
-                                        <MudText Typo="Typo.h6" Style="font-family: 'Playfair Display', serif; color: #191c1d; font-weight: 700;">
-                                            Mesa #@mesaNum
-                                        </MudText>
-                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                            Código: <b>@res.CodigoReserva</b>
-                                        </MudText>
-                                    </div>
-                                    <MudChip T="string" Size="Size.Small" Color="@GetChipColor(res.Estado)" Variant="Variant.Filled">
-                                        @res.Estado
-                                    </MudChip>
-                                </div>
-
-                                <MudDivider Class="my-2" />
-
-                                <div class="my-2">
-                                    <MudText Typo="Typo.body2" Class="mb-1">
-                                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" Class="mr-1" />
-                                        <b>@res.FechaReserva.ToString("dd/MM/yyyy")</b> a las <b>@res.HoraReserva.ToString("hh\\:mm")</b>
-                                    </MudText>
-                                    <MudText Typo="Typo.body2">
-                                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="mr-1" />
-                                        @res.CantidadPersonas comensales
-                                    </MudText>
-                                </div>
-
-                                <MudCardActions Class="px-0 pb-0 pt-3 d-flex justify-end gap-2">
-                                    @if (res.Estado == "Pendiente" || res.Estado == "Confirmada")
-                                    {
-                                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
-                                                   OnClick="@(() => CancelarReserva(res))"
-                                                   Style="border-radius: 6px;">
-                                            Cancelar
-                                        </MudButton>
-                                    }
-                                </MudCardActions>
-                            </MudCard>
-                        </MudItem>
+                        var starVal = i;
+                        <button type="button" class="btn btn-link p-0 me-2 text-warning fs-3 text-decoration-none"
+                                @onclick="() => _nuevaCalificacion = starVal">
+                            <i class="bi @(starVal <= _nuevaCalificacion ? "bi-star-fill" : "bi-star")"></i>
+                        </button>
                     }
-                </MudGrid>
-            }
-        </MudTabPanel>
-
-        <!-- TAB 2: DATOS Y PREFERENCIAS -->
-        <MudTabPanel Text="Configuración de Cuenta" Icon="@Icons.Material.Filled.Settings">
-            <div class="my-4">
-                <MudText Typo="Typo.h5" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
-                    Datos Personales & Preferencias
-                </MudText>
-                <MudGrid Spacing="3">
-                    <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_usuario.Nombres" Label="Nombre" Variant="Variant.Outlined" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_usuario.Apellidos" Label="Apellidos" Variant="Variant.Outlined" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_usuario.Email" Label="Correo Electrónico" Variant="Variant.Outlined" Disabled="true" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_usuario.Telefono" Label="Teléfono / WhatsApp" Variant="Variant.Outlined" />
-                    </MudItem>
-                    <MudItem xs="12">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="sabor-bg-burgundy px-6"
-                                   OnClick="@(() => GuardarCambios())"
-                                   Style="border-radius: 8px; font-weight: 600;">
-                            GUARDAR CAMBIOS
-                        </MudButton>
-                    </MudItem>
-                </MudGrid>
+                </div>
             </div>
-        </MudTabPanel>
-
-        <!-- TAB 3: FAVORITOS -->
-        <MudTabPanel Text="Mi Cava Favorita" Icon="@Icons.Material.Filled.Favorite">
-            <div class="my-4">
-                <MudText Typo="Typo.h5" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
-                    Vinos & Especialidades Favoritas
-                </MudText>
-                <MudGrid Spacing="3">
-                    <MudItem xs="12" sm="6" md="4">
-                        <MudCard Class="sabor-card pa-4 text-center">
-                            <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Large" Style="color: #610000;" />
-                            <MudText Typo="Typo.h6" Class="mt-2" Style="font-family: 'Playfair Display', serif; font-weight: 700;">
-                                Tannat Aranjuez 2019
-                            </MudText>
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Gran Reserva · Tarija</MudText>
-                            <MudDivider Class="my-3" />
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" FullWidth="true"
-                                       OnClick="@(() => Navigation.NavigateTo("reservas/nueva"))">
-                                Reservar para mi Próxima Visita
-                            </MudButton>
-                        </MudCard>
-                    </MudItem>
-                </MudGrid>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Comentario</label>
+                <textarea class="form-control" rows="3" placeholder="¿Qué le pareció la comida y la atención?" @bind="_nuevoComentario"></textarea>
             </div>
-        </MudTabPanel>
+            <div>
+                <button class="btn btn-danger px-4 rounded-3" @onclick="PublicarResena" disabled="@_enviandoResena">
+                    @if (_enviandoResena)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-send me-2"></i>
+                    }
+                    Publicar Reseña
+                </button>
+            </div>
+        </div>
 
-    </MudTabs>
+        <h5 class="fw-bold mb-3" style="color: var(--sabor-burgundy);">Mis Testimonios Publicados</h5>
+        @if (!_misResenas.Any())
+        {
+            <div class="alert alert-light border text-center py-4">
+                Aún no ha escrito ninguna reseña. ¡Nos encantaría conocer su opinión!
+            </div>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var r in _misResenas)
+                {
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm p-3 rounded-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="text-warning">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        if (i <= r.Calificacion)
+                                        {
+                                            <i class="bi bi-star-fill me-1"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-star me-1 text-muted"></i>
+                                        }
+                                    }
+                                </div>
+                                <span class="badge @(r.Estado ? "bg-success" : "bg-secondary")">
+                                    @(r.Estado ? "Visible en comunidad" : "Oculta por moderación")
+                                </span>
+                            </div>
+                            <p class="mb-1 text-dark fst-italic">"@r.Comentario"</p>
+                            <small class="text-muted">Publicada el @r.FechaResena.ToString("dd/MM/yyyy HH:mm")</small>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    }
 }
 
 @code {
     private Usuario? _usuario;
     private List<Reserva> _reservas = new();
+    private List<Resena> _misResenas = new();
     private bool _cargando = true;
+    private int _tabIndex = 0;
+    private bool _modoEdicion = false;
+
+    private int _nuevaCalificacion = 5;
+    private string _nuevoComentario = "";
+    private bool _enviandoResena = false;
 
     protected override async Task OnInitializedAsync()
     {
         await CargarDatos();
     }
+
+    private void SetTab(int index) => _tabIndex = index;
 
     private async Task CargarDatos()
     {
@@ -221,8 +319,44 @@ else
         {
             _usuario = await UsuarioService.GetUsuarioByIdAsync(uid);
             _reservas = await ReservaService.GetReservasByUsuarioAsync(uid);
+            _misResenas = await ResenaService.GetResenasPorUsuarioAsync(uid);
         }
         _cargando = false;
+    }
+
+    private async Task PublicarResena()
+    {
+        if (string.IsNullOrWhiteSpace(_nuevoComentario))
+        {
+            Toast.ShowWarning("Por favor ingrese su comentario para publicar la reseña.");
+            return;
+        }
+        if (_usuario == null) return;
+
+        _enviandoResena = true;
+        var nueva = new Resena
+        {
+            UsuarioId = _usuario.Id,
+            Calificacion = _nuevaCalificacion,
+            Comentario = _nuevoComentario.Trim(),
+            FechaResena = DateTime.Now,
+            Estado = true
+        };
+
+        bool ok = await ResenaService.CrearResenaAsync(nueva);
+        _enviandoResena = false;
+
+        if (ok)
+        {
+            Toast.ShowSuccess("¡Gracias por compartir su experiencia en Sabor & Tradición!");
+            _nuevoComentario = "";
+            _nuevaCalificacion = 5;
+            _misResenas = await ResenaService.GetResenasPorUsuarioAsync(_usuario.Id);
+        }
+        else
+        {
+            Toast.ShowError("No se pudo publicar la reseña. Intente más tarde.");
+        }
     }
 
     private async Task CancelarReserva(Reserva res)
@@ -231,12 +365,12 @@ else
         var resCancel = await ReservaService.CancelarReservaAsync(res.Id, _usuario.Id);
         if (resCancel.exito)
         {
-            Snackbar.Add(resCancel.mensaje, Severity.Warning);
+            Toast.ShowWarning(resCancel.mensaje);
             await CargarDatos();
         }
         else
         {
-            Snackbar.Add(resCancel.mensaje, Severity.Error);
+            Toast.ShowError(resCancel.mensaje);
         }
     }
 
@@ -246,12 +380,19 @@ else
         var exito = await UsuarioService.ActualizarUsuarioAsync(_usuario);
         if (exito)
         {
-            Snackbar.Add("Datos de perfil actualizados exitosamente.", Severity.Success);
+            _modoEdicion = false;
+            Toast.ShowSuccess("Datos de perfil actualizados exitosamente.");
         }
         else
         {
-            Snackbar.Add("Hubo un error al guardar los cambios.", Severity.Error);
+            Toast.ShowError("Hubo un error al guardar los cambios.");
         }
+    }
+
+    private async Task CancelarEdicion()
+    {
+        _modoEdicion = false;
+        await CargarDatos();
     }
 
     private string GetIniciales(string nombres, string apellidos)
@@ -261,12 +402,12 @@ else
         return $"{n}{a}".ToUpper();
     }
 
-    private Color GetChipColor(string estado) => estado switch
+    private string GetBadgeClass(string estado) => estado switch
     {
-        "Confirmada" => Color.Success,
-        "Completada" => Color.Info,
-        "Cancelada" => Color.Error,
-        "Pendiente" => Color.Warning,
-        _ => Color.Default
+        "Confirmada" => "bg-success",
+        "Completada" => "bg-info",
+        "Cancelada" => "bg-danger",
+        "Pendiente" => "bg-warning text-dark",
+        _ => "bg-secondary"
     };
 }

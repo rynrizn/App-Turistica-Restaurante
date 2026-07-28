@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,13 +39,27 @@ public partial class AppWebContext : DbContext
 
     public virtual DbSet<Usuario> Usuarios { get; set; }
 
+    public virtual DbSet<ConfiguracionRestaurante> ConfiguracionRestaurante { get; set; }
+
     public virtual DbSet<VHistorialRestaurante> VHistorialRestaurantes { get; set; }
+
+    public virtual DbSet<Resena> Resenas { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql("Name=ConnectionStrings:DefaultConnection");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ConfiguracionRestaurante>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("configuracion_restaurante_pkey");
+            entity.ToTable("configuracion_restaurante");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Clave).HasMaxLength(100).HasColumnName("clave");
+            entity.Property(e => e.Valor).HasMaxLength(255).HasColumnName("valor");
+            entity.Property(e => e.Descripcion).HasColumnName("descripcion");
+        });
+
         modelBuilder.Entity<Categoria>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("categorias_pkey");
@@ -405,6 +419,27 @@ public partial class AppWebContext : DbContext
             entity.Property(e => e.TotalFactura)
                 .HasPrecision(10, 2)
                 .HasColumnName("total_factura");
+        });
+
+        modelBuilder.Entity<Resena>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("resenas_pkey");
+            entity.ToTable("resenas");
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.UsuarioId).HasColumnName("usuario_id");
+            entity.Property(e => e.Calificacion).HasColumnName("calificacion");
+            entity.Property(e => e.Comentario).HasColumnName("comentario");
+            entity.Property(e => e.FechaResena)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("timestamp without time zone")
+                .HasColumnName("fecha_resena");
+            entity.Property(e => e.Estado)
+                .HasDefaultValue(true)
+                .HasColumnName("estado");
+
+            entity.HasOne(d => d.Usuario).WithMany()
+                .HasForeignKey(d => d.UsuarioId)
+                .HasConstraintName("fk_resenas_usuario");
         });
 
         OnModelCreatingPartial(modelBuilder);

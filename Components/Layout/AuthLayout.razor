@@ -1,19 +1,16 @@
 @inherits LayoutComponentBase
+@using RestauranteTuristicoApp.Components.Shared
 
-<MudThemeProvider Theme="SaborTheme.DefaultTheme" />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
+<ToastContainer />
 
 <div class="sabor-auth-bg">
     <div style="position: absolute; top: 24px; left: 24px; z-index: 10;">
-        <MudButton Href="" Variant="Variant.Filled" Color="Color.Surface" StartIcon="@Icons.Material.Filled.ArrowBack" 
-                   Style="border-radius: 8px; font-weight: 600;">
-            Volver a Sabor & Tradición
-        </MudButton>
+        <a href="" class="btn btn-sabor-gold shadow-sm px-3 py-2 rounded-3 text-decoration-none d-flex align-items-center">
+            <i class="bi bi-arrow-left me-2"></i> Volver a Sabor & Tradición
+        </a>
     </div>
 
-    <div style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 24px 0;">
+    <div class="w-100 d-flex justify-content-center align-items-center py-4">
         @Body
     </div>
 </div>

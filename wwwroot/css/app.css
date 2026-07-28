@@ -1,51 +1,161 @@
-/* Sabor & Tradición Visual Identity CSS Overrides */
+/* Sabor & Tradición Visual Identity - Bootstrap 5 Native Styles */
 :root {
-    --color-surface: #f8f9fa;
-    --color-surface-dim: #d9dadb;
-    --color-surface-container-lowest: #ffffff;
-    --color-surface-container-low: #f3f4f5;
-    --color-surface-container: #edeeef;
-    --color-on-surface: #191c1d;
-    --color-on-surface-variant: #5a403c;
-    --color-primary: #610000;
-    --color-primary-container: #8b0000;
-    --color-secondary: #735c00;
-    --color-secondary-container: #fed65b;
-    --color-outline: #8e706b;
-    --font-headline: 'Playfair Display', serif;
-    --font-body: 'Roboto Flex', sans-serif;
+    --sabor-surface: #f8f9fa;
+    --sabor-surface-dim: #d9dadb;
+    --sabor-surface-card: #ffffff;
+    --sabor-on-surface: #191c1d;
+    --sabor-on-surface-variant: #5a403c;
+    --sabor-burgundy: #610000;
+    --sabor-burgundy-dark: #4d0000;
+    --sabor-burgundy-light: #8b0000;
+    --sabor-gold: #fed65b;
+    --sabor-gold-dark: #d8b230;
+    --sabor-gold-text: #5a4500;
+    --sabor-outline: #8e706b;
+    --font-headline: 'Outfit', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-body: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
 body {
     font-family: var(--font-body);
-    background-color: var(--color-surface);
-    color: var(--color-on-surface);
+    background-color: var(--sabor-surface);
+    color: var(--sabor-on-surface);
     margin: 0;
     padding: 0;
 }
 
-/* Headings always use Playfair Display */
-h1, h2, h3, h4, h5, h6,
-.mud-typography-h1, .mud-typography-h2, .mud-typography-h3,
-.mud-typography-h4, .mud-typography-h5, .mud-typography-h6 {
-    font-family: var(--font-headline) !important;
+/* Headings Playfair Display */
+h1, h2, h3, h4, h5, h6, .font-playfair {
+    font-family: var(--font-headline);
     font-weight: 700;
 }
 
-/* Glassmorphism / Luxury Cards subtle hover */
+/* ----------------------------------------------------
+   SIDEBAR & LAYOUT (DESKTOP / MOBILE)
+---------------------------------------------------- */
+.sabor-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    background-color: #ffffff;
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    z-index: 1045;
+    transition: transform 0.3s ease-in-out;
+    overflow-y: auto;
+}
+
+.sabor-sidebar-brand {
+    padding: 1.5rem 1.25rem;
+    font-family: var(--font-headline);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--sabor-burgundy);
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.sabor-sidebar-nav {
+    flex: 1;
+    padding: 1rem 0;
+}
+
+.sabor-sidebar-nav .nav-link {
+    color: var(--sabor-on-surface-variant);
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.sabor-sidebar-nav .nav-link:hover,
+.sabor-sidebar-nav .nav-link.active {
+    color: var(--sabor-burgundy);
+    background-color: rgba(97, 0, 0, 0.06);
+    border-left: 4px solid var(--sabor-burgundy);
+}
+
+.sabor-sidebar-user {
+    padding: 1.25rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    background-color: var(--sabor-surface);
+}
+
+/* Mini-header en Móvil (<992px) */
+.sabor-mobile-header {
+    height: 56px;
+    background: linear-gradient(135deg, var(--sabor-burgundy), var(--sabor-burgundy-light));
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 1040;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.sabor-mobile-brand {
+    font-family: var(--font-headline);
+    font-weight: 700;
+    color: #ffffff;
+    font-size: 1.15rem;
+    margin-left: 0.5rem;
+}
+
+.sabor-sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1042;
+    display: none;
+}
+
+.sabor-content {
+    margin-left: 260px;
+    min-height: 100vh;
+    padding: 2rem;
+    transition: margin-left 0.3s ease-in-out;
+}
+
+@media (max-width: 991.98px) {
+    .sabor-sidebar {
+        transform: translateX(-100%);
+    }
+    .sabor-sidebar.open {
+        transform: translateX(0);
+    }
+    .sabor-sidebar-overlay.open {
+        display: block;
+    }
+    .sabor-content {
+        margin-left: 0;
+        padding: 1rem;
+    }
+}
+
+/* ----------------------------------------------------
+   CARDS & COMPONENTS
+---------------------------------------------------- */
 .sabor-card {
-    border-radius: 12px !important;
-    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
-    background: var(--color-surface-container-lowest) !important;
-    border: 1px solid rgba(142, 112, 107, 0.15) !important;
+    border-radius: 12px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    background: var(--sabor-surface-card);
+    border: 1px solid rgba(142, 112, 107, 0.15);
 }
 
 .sabor-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(97, 0, 0, 0.12) !important;
+    box-shadow: 0 12px 28px rgba(97, 0, 0, 0.12);
 }
 
-/* Image zoom-in transition on hover */
 .sabor-image-container {
     overflow: hidden;
     border-top-left-radius: 12px;
@@ -53,53 +163,106 @@ h1, h2, h3, h4, h5, h6,
 }
 
 .sabor-image-container img {
-    transition: transform 0.5s ease;
+    transition: transform 0.4s ease;
+    width: 100%;
+    object-fit: cover;
 }
 
 .sabor-card:hover .sabor-image-container img {
     transform: scale(1.06);
 }
 
-/* Gold Chip border and text */
+/* ----------------------------------------------------
+   BOTONES Y CHIPS
+---------------------------------------------------- */
+.btn-sabor-gold {
+    background-color: var(--sabor-gold);
+    color: var(--sabor-gold-text);
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-sabor-gold:hover, .btn-sabor-gold:focus {
+    background-color: var(--sabor-gold-dark);
+    color: #000000;
+    box-shadow: 0 4px 12px rgba(254, 214, 91, 0.4);
+}
+
+.btn-sabor-burgundy {
+    background: linear-gradient(135deg, var(--sabor-burgundy), var(--sabor-burgundy-light));
+    color: #ffffff;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s;
+}
+
+.btn-sabor-burgundy:hover, .btn-sabor-burgundy:focus {
+    background: var(--sabor-burgundy-dark);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(97, 0, 0, 0.3);
+}
+
 .sabor-chip-gold {
-    border: 1px solid var(--color-secondary) !important;
-    color: var(--color-secondary) !important;
-    background-color: rgba(254, 214, 91, 0.12) !important;
-    font-weight: 600 !important;
+    background-color: #fed65b;
+    color: #3b2e00 !important;
+    border: 1px solid #ffe680;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
-/* Deep Burgundy ripple/accent */
-.sabor-bg-burgundy {
-    background: linear-gradient(135deg, #610000 0%, #8b0000 100%) !important;
-    color: white !important;
-}
-
-.sabor-text-burgundy {
-    color: #610000 !important;
-}
-
-.sabor-text-gold {
-    color: #735c00 !important;
-}
-
-/* Custom background for Auth pages */
+/* ----------------------------------------------------
+   AUTH PAGES (LOGIN & REGISTER)
+---------------------------------------------------- */
 .sabor-auth-bg {
-    background: linear-gradient(135deg, rgba(97, 0, 0, 0.92) 0%, rgba(25, 28, 29, 0.95) 100%),
-                url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
     min-height: 100vh;
+    width: 100%;
+    background: linear-gradient(135deg, rgba(97, 0, 0, 0.9), rgba(40, 0, 0, 0.95)),
+                url('/img/tarija-background.jpg') center/cover no-repeat;
     display: flex;
-    align-items: center;
     justify-content: center;
-    padding: 24px;
+    align-items: center;
+    position: relative;
+    padding: 2rem 1rem;
 }
 
-/* Glassmorphism auth card */
 .sabor-auth-card {
-    background: rgba(255, 255, 255, 0.96) !important;
-    backdrop-filter: blur(12px);
-    border-radius: 16px !important;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35) !important;
-    border: 1px solid rgba(227, 190, 184, 0.4) !important;
-    max-width: 460px;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+    max-width: 480px;
     width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 2.5rem 2rem;
+}
+
+/* ----------------------------------------------------
+   TABLES & BADGES
+---------------------------------------------------- */
+.table-hover tbody tr:hover {
+    background-color: rgba(97, 0, 0, 0.03);
+}
+
+.badge-sabor {
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+    border-radius: 6px;
+}
+
+.sabor-profile-card {
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+.sabor-profile-card:hover {
+    background-color: rgba(97, 0, 0, 0.07);
+    border-color: rgba(97, 0, 0, 0.18);
+    transform: translateY(-1px);
+}
+
+/* ----------------------------------------------------
+   BLAZOR ERROR UI (Oculto por defecto)
+---------------------------------------------------- */
+#blazor-error-ui {
+    display: none !important;
 }

@@ -1,172 +1,186 @@
 @page "/"
 @using RestauranteTuristicoApp.Models
 @using RestauranteTuristicoApp.Services
-@inject IDialogService DialogService
-@inject ISnackbar Snackbar
+@inject ToastService Toast
 @inject NavigationManager Navigation
 @inject ProductoService ProductoService
+@inject ResenaService ResenaService
 
 <PageTitle>Sabor & Tradición | Menú & Cava Tarijeña</PageTitle>
 
 <!-- SECCIÓN HERO / PRESENTACIÓN -->
-<div class="pa-6 pa-md-10 mb-8 rounded-xl" 
-     style="background: linear-gradient(135deg, rgba(97, 0, 0, 0.92) 0%, rgba(44, 44, 44, 0.94) 100%), url('https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; color: white; box-shadow: 0 16px 40px rgba(97,0,0,0.25);">
-    <MudGrid Class="align-center">
-        <MudItem xs="12" md="8">
-            <MudChip T="string" Size="Size.Small" Style="background-color: rgba(254,214,91,0.2); color: #fed65b; border: 1px solid #fed65b; font-weight: 600;" Class="mb-3">
-                <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Small" Class="mr-1" /> ALTA GASTRONOMÍA & VINOS DE ALTURA
-            </MudChip>
-            <MudText Typo="Typo.h2" Class="mb-3" Style="font-family: 'Playfair Display', serif; font-weight: 700; line-height: 1.15;">
+<section class="p-4 p-md-5 mb-5 rounded-4" 
+         style="background: linear-gradient(135deg, rgba(97, 0, 0, 0.92) 0%, rgba(44, 44, 44, 0.94) 100%), url('https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat; color: white; box-shadow: 0 16px 40px rgba(97,0,0,0.25);">
+    <div class="row align-items-center">
+        <div class="col-12 col-md-8">
+            <span class="badge sabor-chip-gold px-3 py-2 mb-3 d-inline-flex align-items-center">
+                <i class="bi bi-cup-hot-fill me-2"></i> ALTA GASTRONOMÍA & VINOS DE ALTURA
+            </span>
+            <h1 class="display-5 mb-3 font-playfair fw-bold" style="line-height: 1.15;">
                 El Sabor de Tarija,<br />
                 <span style="color: #fed65b; font-style: italic;">Elevado en Cada Detalle.</span>
-            </MudText>
-            <MudText Typo="Typo.body1" Class="mb-6" Style="max-width: 600px; color: #f0f1f2; font-size: 1.1rem; line-height: 1.6;">
+            </h1>
+            <p class="mb-4 lead text-light" style="max-width: 600px; font-size: 1.1rem;">
                 Un homenaje a la cocina chapaca patrimonial maridada con los mejores vinos Tannat del Valle de la Concepción. Disfrute como un auténtico sommelier.
-            </MudText>
+            </p>
             <div class="d-flex flex-wrap gap-3">
-                <MudButton Variant="Variant.Filled" 
-                           Size="Size.Large"
-                           StartIcon="@Icons.Material.Filled.TableBar"
-                           OnClick="@(() => Navigation.NavigateTo("reservas"))"
-                           Style="background-color: #fed65b; color: #735c00; font-weight: 700; border-radius: 8px; padding: 12px 28px;">
-                    RESERVAR MESA
-                </MudButton>
-                <MudButton Variant="Variant.Outlined" 
-                           Size="Size.Large"
-                           StartIcon="@Icons.Material.Filled.RestaurantMenu"
-                           OnClick="ScrollToMenu"
-                           Style="border-color: white; color: white; font-weight: 600; border-radius: 8px; padding: 12px 24px;">
-                    VER CARTA DEL CHEF
-                </MudButton>
+                <button type="button" class="btn btn-sabor-gold btn-lg px-4 py-2" @onclick="@(() => Navigation.NavigateTo("reservas"))">
+                    <i class="bi bi-calendar-check me-2"></i>RESERVAR MESA
+                </button>
+                <button type="button" class="btn btn-outline-light btn-lg px-4 py-2 fw-semibold" @onclick="ScrollToMenu">
+                    <i class="bi bi-book-half me-2"></i>VER CARTA DEL CHEF
+                </button>
             </div>
-        </MudItem>
-        <MudItem xs="12" md="4" Class="d-none d-md-flex justify-end">
-            <div class="pa-4 rounded-lg text-center" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(254,214,91,0.4); max-width: 280px;">
-                <MudText Typo="Typo.h4" Style="color: #fed65b; font-family: 'Playfair Display', serif; font-weight: 700;">1,850 m</MudText>
-                <MudText Typo="Typo.caption" Style="color: white; text-transform: uppercase; letter-spacing: 1px;">Altitud de Nuestros Viñedos</MudText>
-                <MudDivider Class="my-3" Style="border-color: rgba(254,214,91,0.3);" />
-                <MudText Typo="Typo.h5" Style="color: white; font-family: 'Playfair Display', serif; font-weight: 700;">4.9 / 5.0 ★</MudText>
-                <MudText Typo="Typo.caption" Style="color: #e1e3e4;">Calificación de Críticos Culinarios</MudText>
+        </div>
+        <div class="col-12 col-md-4 d-none d-md-flex justify-content-end mt-4 mt-md-0">
+            <div class="p-4 rounded-4 text-center" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(254,214,91,0.4); max-width: 280px;">
+                <h3 class="font-playfair fw-bold mb-0" style="color: #fed65b;">1,850 m</h3>
+                <small class="text-white text-uppercase" style="letter-spacing: 1px;">Altitud de Nuestros Viñedos</small>
+                <hr class="my-3" style="border-color: rgba(254,214,91,0.3);" />
+                <h4 class="font-playfair fw-bold mb-0 text-white">4.9 / 5.0 ★</h4>
+                <small class="text-light">Calificación de Críticos Culinarios</small>
             </div>
-        </MudItem>
-    </MudGrid>
-</div>
+        </div>
+    </div>
+</section>
 
 <!-- FILTROS DE CATEGORÍA -->
-<div id="seccion-menu" class="mb-6">
-    <div class="d-flex flex-wrap align-center justify-space-between mb-4">
+<section id="seccion-menu" class="mb-5">
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-3">
         <div>
-            <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: var(--color-primary); font-weight: 700;">
+            <h2 class="font-playfair fw-bold text-sabor-burgundy mb-1" style="color: var(--sabor-burgundy);">
                 Carta Gastronómica
-            </MudText>
-            <MudText Typo="Typo.body2" Class="mud-text-secondary">
-                Seleccione una categoría para explorar nuestras especialidades y recomendaciones de maridaje.
-            </MudText>
+            </h2>
+            <p class="text-muted small mb-0">Seleccione los platos ancestrales que conformarán su experiencia culinaria en su próxima reserva.</p>
         </div>
-        
-        <!-- Búsqueda rápida -->
-        <MudTextField @bind-Value="_searchTerm" 
-                      Placeholder="Buscar plato o vino..." 
-                      Variant="Variant.Outlined" 
-                      Adornment="Adornment.Start" 
-                      AdornmentIcon="@Icons.Material.Filled.Search"
-                      AdornmentColor="Color.Primary"
-                      Margin="Margin.Dense"
-                      Immediate="true"
-                      Style="max-width: 280px; background: white; border-radius: 8px;" />
+        <div class="d-flex flex-wrap gap-2">
+            @foreach (var cat in _categorias)
+            {
+                var isActive = _selectedCategory == cat;
+                <button type="button"
+                        class="btn btn-sm rounded-pill px-3 @(isActive ? "btn-sabor-burgundy" : "btn-outline-secondary")"
+                        @onclick="() => SetCategory(cat)">
+                    @cat
+                </button>
+            }
+        </div>
     </div>
 
-    <!-- CHIPS DE CATEGORÍA -->
-    <div class="d-flex flex-wrap gap-2 mb-4">
-        @foreach (var cat in _categorias)
+    <!-- BUSCADOR RÁPIDO -->
+    <div class="row mb-4">
+        <div class="col-12 col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0" placeholder="Buscar por ingrediente, nombre o vino..."
+                       @bind="_searchTerm" @bind:event="oninput" />
+            </div>
+        </div>
+    </div>
+
+    <!-- GRID DE PLATOS Y VINOS -->
+    <div class="row g-4">
+        @foreach (var plato in FilteredPlatos)
         {
-            var isSelected = _selectedCategory == cat;
-            <MudButton Variant="@(isSelected ? Variant.Filled : Variant.Outlined)"
-                       Color="@(isSelected ? Color.Primary : Color.Default)"
-                       OnClick="@(() => SetCategory(cat))"
-                       Size="Size.Small"
-                       Class="@(isSelected ? "sabor-bg-burgundy px-4 py-2" : "px-4 py-2")"
-                       Style="border-radius: 20px; font-weight: 600;">
-                @cat
-            </MudButton>
-        }
-    </div>
-</div>
-
-<!-- GRID DE PLATOS -->
-<MudGrid Spacing="4">
-    @foreach (var plato in FilteredPlatos)
-    {
-        <MudItem xs="12" sm="6" md="4">
-            <MudCard Class="sabor-card d-flex flex-column" Elevation="2" Style="height: 100%;">
-                <div class="sabor-image-container" style="position: relative; height: 220px;">
-                    <img src="@(plato.ImagenUrl ?? "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80")" alt="@plato.Nombre" style="width: 100%; height: 100%; object-fit: cover;" />
-                    <div style="position: absolute; top: 12px; right: 12px;">
-                        <MudChip T="string" Size="Size.Small" Class="sabor-chip-gold">
-                            @(plato.Categoria?.Nombre ?? "Especialidad")
-                        </MudChip>
+            <div class="col-12 col-sm-6 col-md-4">
+                <div class="card sabor-card h-100 shadow-sm">
+                    <div class="sabor-image-container position-relative" style="height: 220px;">
+                        <img src="@plato.ImagenUrl" alt="@plato.Nombre" class="w-100 h-100 object-fit-cover" />
+                        <span class="badge position-absolute top-0 end-0 m-3 @(plato.Disponible == true ? "bg-success" : "bg-secondary")">
+                            @(plato.Disponible == true ? "Disponible" : "Agotado")
+                        </span>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-baseline mb-2">
+                            <span class="badge bg-light text-dark border small">@(plato.Categoria?.Nombre ?? "Tradicional")</span>
+                            <span class="fw-bold fs-5" style="color: var(--sabor-burgundy);">@plato.Precio.ToString("N2") Bs</span>
+                        </div>
+                        <h5 class="card-title font-playfair fw-bold mb-2">@plato.Nombre</h5>
+                        <p class="card-text text-muted small flex-grow-1">@plato.Descripcion</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0 d-flex justify-content-between align-items-center pb-3">
+                        <button type="button" class="btn btn-sm btn-sabor-burgundy px-3"
+                                @onclick="() => OnOrderDish(plato)" disabled="@(plato.Disponible != true)">
+                            <i class="bi bi-plus-circle me-1"></i> Pre-ordenar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle"
+                                @onclick="() => OnLikeDish(plato)" title="Me gusta">
+                            <i class="bi bi-heart"></i>
+                        </button>
                     </div>
                 </div>
+            </div>
+        }
+    </div>
+</section>
 
-                <MudCardContent Class="flex-grow-1 pa-4">
-                    <div class="d-flex justify-space-between align-start mb-1">
-                        <MudText Typo="Typo.h6" Style="font-family: 'Playfair Display', serif; color: var(--color-on-surface); font-weight: 700;">
-                            @plato.Nombre
-                        </MudText>
-                        <MudText Typo="Typo.h6" Style="color: var(--color-primary); font-weight: 700; white-space: nowrap;">
-                            Bs. @plato.Precio.ToString("N2")
-                        </MudText>
+<!-- SECCIÓN DE RESEÑAS Y TESTIMONIOS -->
+@if (_resenasPublicas.Any())
+{
+    <section class="mt-5">
+        <div class="text-center mb-4">
+            <span class="badge bg-light text-dark border px-3 py-2 mb-2">OPINIONES DE COMENSALES</span>
+            <h3 class="fw-bold" style="color: var(--sabor-burgundy);">Experiencias en Sabor & Tradición</h3>
+        </div>
+        <div class="row g-4">
+            @foreach (var resena in _resenasPublicas.Take(3))
+            {
+                <div class="col-12 col-md-4">
+                    <div class="card h-100 border-0 shadow-sm rounded-4 p-4" style="background-color: #ffffff;">
+                        <div class="mb-2 text-warning">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                if (i <= resena.Calificacion)
+                                {
+                                    <i class="bi bi-star-fill me-1"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-star me-1 text-muted"></i>
+                                }
+                            }
+                        </div>
+                        <p class="card-text text-muted fst-italic flex-grow-1">
+                            "@resena.Comentario"
+                        </p>
+                        <div class="d-flex align-items-center mt-3 pt-3 border-top">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; color: var(--sabor-burgundy);">
+                                <i class="bi bi-person-fill fs-5"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0 fw-bold">@(resena.Usuario?.NombreCompleto ?? "Comensal Sabor & Tradición")</h6>
+                                <small class="text-muted">@resena.FechaResena.ToString("dd/MM/yyyy")</small>
+                            </div>
+                        </div>
                     </div>
-
-                    <MudText Typo="Typo.caption" Class="d-block mb-2 font-weight-bold" Style="color: var(--color-secondary); text-transform: uppercase;">
-                        <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Small" Class="mr-1" /> Maridaje: Vino Tannat / Moscatel Tarijeño
-                    </MudText>
-
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="line-height: 1.5;">
-                        @plato.Descripcion
-                    </MudText>
-                </MudCardContent>
-
-                <MudCardActions Class="pa-4 pt-0 d-flex justify-space-between align-center">
-                    <MudButton Variant="Variant.Outlined" 
-                               Color="Color.Primary" 
-                               Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.AddShoppingCart"
-                               OnClick="@(() => OnOrderDish(plato))"
-                               Style="border-color: var(--color-primary); border-radius: 6px; font-weight: 600;">
-                        Reservar Mesa con este Plato
-                    </MudButton>
-                    <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" 
-                                   Color="Color.Default" 
-                                   Size="Size.Small"
-                                   OnClick="@(() => OnLikeDish(plato))" />
-                </MudCardActions>
-            </MudCard>
-        </MudItem>
-    }
-</MudGrid>
+                </div>
+            }
+        </div>
+    </section>
+}
 
 <!-- PIE / SECCIÓN DE INFORMACIÓN COLONIAL -->
-<div class="mt-12 pa-8 rounded-xl text-center" style="background-color: #f3f4f5; border: 1px solid #e3beb8;">
-    <MudIcon Icon="@Icons.Material.Filled.Verified" Size="Size.Large" Style="color: #735c00;" Class="mb-2" />
-    <MudText Typo="Typo.h5" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+<section class="mt-5 p-4 p-md-5 rounded-4 text-center bg-light border">
+    <i class="bi bi-patch-check-fill fs-2 text-warning mb-2 d-inline-block"></i>
+    <h3 class="font-playfair fw-bold mb-2" style="color: var(--sabor-burgundy);">
         Gastronomía Patrimonial Tarijeña
-    </MudText>
-    <MudText Typo="Typo.body2" Class="mud-text-secondary mx-auto mt-2" Style="max-width: 680px;">
+    </h3>
+    <p class="text-muted mx-auto mb-0" style="max-width: 680px;">
         Todos nuestros ingredientes provienen de productores locales del Valle de La Concepción y San Lorenzo. Cocinamos con leña de molle y respetamos los tiempos de cocción de nuestras abuelas.
-    </MudText>
-</div>
+    </p>
+</section>
 
 @code {
     private string _searchTerm = "";
     private string _selectedCategory = "Todos";
 
     private List<Producto> _platos = new();
+    private List<Resena> _resenasPublicas = new();
     private readonly List<string> _categorias = new() { "Todos" };
 
     protected override async Task OnInitializedAsync()
     {
         _platos = await ProductoService.GetProductosDisponiblesAsync();
+        _resenasPublicas = await ResenaService.GetResenasPublicasAsync();
         var catList = _platos
             .Where(p => p.Categoria != null)
             .Select(p => p.Categoria.Nombre)
@@ -188,13 +202,13 @@
 
     private void OnOrderDish(Producto plato)
     {
-        Snackbar.Add($"Ha seleccionado: {plato.Nombre}. Puede incluirlo al hacer su reserva de mesa.", Severity.Success);
+        Toast.ShowSuccess($"Ha seleccionado: {plato.Nombre}. Puede incluirlo al hacer su reserva de mesa.");
         Navigation.NavigateTo("/reservas/nueva");
     }
 
     private void OnLikeDish(Producto plato)
     {
-        Snackbar.Add($"¡Le gusta {plato.Nombre}! Guardado en sus favoritos.", Severity.Info);
+        Toast.ShowInfo($"¡Le gusta {plato.Nombre}! Guardado en sus favoritos.");
     }
 
     private IEnumerable<Producto> FilteredPlatos => _platos.Where(p =>

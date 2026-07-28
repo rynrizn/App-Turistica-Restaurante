@@ -1,0 +1,86 @@
+@using RestauranteTuristicoApp.Services
+@inject ToastService ToastService
+@implements IDisposable
+
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090;">
+    @foreach (var toast in _toasts)
+    {
+        <div class="toast show @GetBorderClass(toast.Type) bg-white shadow-lg mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header @GetHeaderClass(toast.Type)">
+                <i class="bi @GetIconClass(toast.Type) me-2"></i>
+                <strong class="me-auto">@GetTitle(toast.Type)</strong>
+                <small>@toast.CreatedAt.ToString("HH:mm")</small>
+                <button type="button" class="btn-close" @onclick="() => RemoveToast(toast.Id)"></button>
+            </div>
+            <div class="toast-body">
+                @toast.Message
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ToastMessage> _toasts = new();
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += ShowToast;
+    }
+
+    private async void ShowToast(ToastMessage toast)
+    {
+        _toasts.Add(toast);
+        await InvokeAsync(StateHasChanged);
+
+        // Auto dismiss después de 4 segundos
+        await Task.Delay(4000);
+        RemoveToast(toast.Id);
+    }
+
+    private async void RemoveToast(Guid id)
+    {
+        var item = _toasts.FirstOrDefault(t => t.Id == id);
+        if (item != null)
+        {
+            _toasts.Remove(item);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private string GetBorderClass(string type) => type switch
+    {
+        "success" => "border-success border-2",
+        "error" => "border-danger border-2",
+        "warning" => "border-warning border-2",
+        _ => "border-info border-2"
+    };
+
+    private string GetHeaderClass(string type) => type switch
+    {
+        "success" => "text-success",
+        "error" => "text-danger",
+        "warning" => "text-warning",
+        _ => "text-info"
+    };
+
+    private string GetIconClass(string type) => type switch
+    {
+        "success" => "bi-check-circle-fill",
+        "error" => "bi-x-circle-fill",
+        "warning" => "bi-exclamation-triangle-fill",
+        _ => "bi-info-circle-fill"
+    };
+
+    private string GetTitle(string type) => type switch
+    {
+        "success" => "Éxito",
+        "error" => "Error",
+        "warning" => "Atención",
+        _ => "Información"
+    };
+
+    public void Dispose()
+    {
+        ToastService.OnShow -= ShowToast;
+    }
+}

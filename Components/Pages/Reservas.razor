@@ -5,7 +5,7 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using RestauranteTuristicoApp.Models
 @using RestauranteTuristicoApp.Services
-@inject ISnackbar Snackbar
+@inject ToastService Toast
 @inject NavigationManager Navigation
 @inject ReservaService ReservaService
 @inject ProductoService ProductoService
@@ -14,306 +14,316 @@
 
 <PageTitle>Reservar Mesa | Sabor & Tradición</PageTitle>
 
-<div class="mb-6">
-    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: var(--color-primary); font-weight: 700;">
+<div class="mb-5">
+    <h1 class="font-playfair fw-bold" style="color: var(--sabor-burgundy);">
         Reservación de Mesa & Cava
-    </MudText>
-    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+    </h1>
+    <p class="text-muted">
         Personalice su experiencia culinaria en Tarija. Disponibilidad en tiempo real.
-    </MudText>
+    </p>
 </div>
 
-<MudGrid Spacing="4">
+<div class="row g-4">
     <!-- COLUMNA DEL STEPPER / FORMULARIO -->
-    <MudItem xs="12" md="8">
-        <MudCard Class="sabor-card pa-4" Elevation="3">
-            <MudTabs @ref="_tabs" Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="pt-2" Color="Color.Primary" ActivePanelIndex="@_currentStep">
-                
-                <!-- PASO 1: FECHA Y HORA -->
-                <MudTabPanel Text="1. Fecha, Hora y Comensales" Icon="@Icons.Material.Filled.CalendarMonth" Disabled="@(_currentStep != 0)">
-                    <div class="pt-3">
-                        <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000;">
-                            ¿Cuándo nos visitará?
-                        </MudText>
-                        
-                        <MudGrid Spacing="3">
-                            <MudItem xs="12" sm="6">
-                                <MudDatePicker Label="Fecha de Reserva" @bind-Date="_selectedDate" Variant="Variant.Outlined" 
-                                               DateFormat="dd/MM/yyyy" Required="true" MinDate="DateTime.Today" />
-                            </MudItem>
-                            <MudItem xs="12" sm="6">
-                                <MudTimePicker Label="Hora Estimada" @bind-Time="_selectedTime" Variant="Variant.Outlined" Required="true" />
-                            </MudItem>
-                            <MudItem xs="12" sm="6">
-                                <MudSelect T="int" @bind-Value="_numPersonas" Label="Número de Comensales" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
-                                    @for (int i = 1; i <= 12; i++)
-                                    {
-                                        int val = i;
-                                        <MudSelectItem Value="@val">@val @(val == 1 ? "Persona" : "Personas")</MudSelectItem>
-                                    }
-                                </MudSelect>
-                            </MudItem>
-                            <MudItem xs="12" sm="6">
-                                <MudSelect T="string" @bind-Value="_motivoVisita" Label="Motivo / Celebración" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
-                                    <MudSelectItem Value="@("Almuerzo / Cena Familiar")" />
-                                    <MudSelectItem Value="@("Cata de Vinos / Maridaje")" />
-                                    <MudSelectItem Value="@("Cumpleaños o Aniversario")" />
-                                    <MudSelectItem Value="@("Cena de Negocios")" />
-                                </MudSelect>
-                            </MudItem>
-                        </MudGrid>
+    <div class="col-12 col-md-8">
+        <div class="card sabor-card border-0 shadow-sm">
+            <!-- WIZARD PROGRESS / NAV TABS -->
+            <div class="card-header bg-white border-bottom pt-3 pb-0 px-4">
+                <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                    <li class="nav-item">
+                        <button type="button" class="nav-link @(_currentStep == 0 ? "active fw-bold text-dark border-bottom-0" : "text-muted")"
+                                disabled="@(_currentStep != 0)">
+                            <i class="bi bi-calendar-event me-2"></i>1. Fecha y Comensales
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button type="button" class="nav-link @(_currentStep == 1 ? "active fw-bold text-dark border-bottom-0" : "text-muted")"
+                                disabled="@(_currentStep != 1)">
+                            <i class="bi bi-table me-2"></i>2. Mesa y Platillos
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button type="button" class="nav-link @(_currentStep == 2 ? "active fw-bold text-dark border-bottom-0" : "text-muted")"
+                                disabled="@(_currentStep != 2)">
+                            <i class="bi bi-check-circle me-2"></i>3. Confirmación
+                        </button>
+                    </li>
+                </ul>
+            </div>
 
-                        <div class="d-flex justify-end mt-6">
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="sabor-bg-burgundy px-6" 
-                                       OnClick="@(() => IrAPaso2())" Style="border-radius: 8px; font-weight: 600;">
-                                Siguiente: Seleccionar Mesa →
-                            </MudButton>
+            <div class="card-body p-4">
+                <!-- PASO 1: FECHA Y HORA -->
+                @if (_currentStep == 0)
+                {
+                    <h5 class="font-playfair fw-bold mb-3" style="color: var(--sabor-burgundy);">
+                        ¿Cuándo nos visitará?
+                    </h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label fw-semibold">Fecha de Reserva *</label>
+                            <input type="date" class="form-control" @bind="_selectedDate" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label fw-semibold">Hora Estimada *</label>
+                            <input type="time" class="form-control" @bind="_selectedTime" />
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label fw-semibold">Número de Comensales *</label>
+                            <select class="form-select" @bind="_numPersonas">
+                                @for (int i = 1; i <= 12; i++)
+                                {
+                                    <option value="@i">@i @(i == 1 ? "Persona" : "Personas")</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-6">
+                            <label class="form-label fw-semibold">Motivo / Celebración *</label>
+                            <select class="form-select" @bind="_motivoVisita">
+                                <option value="Almuerzo / Cena Familiar">Almuerzo / Cena Familiar</option>
+                                <option value="Cata de Vinos / Maridaje">Cata de Vinos / Maridaje</option>
+                                <option value="Cumpleaños o Aniversario">Cumpleaños o Aniversario</option>
+                                <option value="Cena de Negocios">Cena de Negocios</option>
+                            </select>
                         </div>
                     </div>
-                </MudTabPanel>
+
+                    <div class="d-flex justify-content-end">
+                        <button type="button" class="btn btn-sabor-burgundy px-4 py-2" @onclick="IrAPaso2">
+                            Siguiente: Seleccionar Mesa <i class="bi bi-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                }
 
                 <!-- PASO 2: AMBIENTE Y MESA + PRE-ORDEN -->
-                <MudTabPanel Text="2. Mesa y Platillos" Icon="@Icons.Material.Filled.TableBar" Disabled="@(_currentStep != 1)">
-                    <div class="pt-3">
-                        <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000;">
-                            Elija una de las mesas disponibles
-                        </MudText>
+                @if (_currentStep == 1)
+                {
+                    <h5 class="font-playfair fw-bold mb-3" style="color: var(--sabor-burgundy);">
+                        Elija una de las mesas disponibles
+                    </h5>
 
-                        @if (_buscandoMesas)
+                    @if (_buscandoMesas)
+                    {
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-danger" role="status"></div>
+                            <p class="text-muted mt-2">Buscando mesas disponibles...</p>
+                        </div>
+                    }
+                    else if (!_mesasDisponibles.Any())
+                    {
+                        <div class="alert alert-warning mb-4">
+                            No hay mesas disponibles para @_numPersonas personas en esa fecha y hora. Por favor intente otro horario o fecha.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3 mb-4">
+                            @foreach (var mesa in _mesasDisponibles)
+                            {
+                                var seleccionada = _mesaSeleccionada?.Id == mesa.Id;
+                                <div class="col-12 col-sm-6 col-md-4">
+                                    <div class="card h-100 p-3 text-center cursor-pointer @(seleccionada ? "border-danger bg-light" : "border")"
+                                         style="cursor: pointer; border-width: @(seleccionada ? "2px" : "1px") !important;"
+                                         @onclick="() => SelectMesa(mesa)">
+                                        <i class="bi bi-table fs-2 mb-1" style="color: var(--sabor-burgundy);"></i>
+                                        <h6 class="fw-bold mb-1">Mesa #@mesa.NumeroMesa</h6>
+                                        <small class="text-muted">Capacidad: @mesa.CapacidadPersonas personas</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <hr class="my-4" />
+
+                    <h5 class="font-playfair fw-bold mb-1" style="color: var(--sabor-burgundy);">
+                        Pre-orden de Platillos (Opcional)
+                    </h5>
+                    <p class="text-muted small mb-3">
+                        Puede ordenar sus platos ahora para que estén listos al llegar. Si lo prefiere, ordene directamente en el restaurante.
+                    </p>
+
+                    <div class="row g-2 mb-4">
+                        @foreach (var prod in _productosMenu)
                         {
-                            <div class="text-center py-6">
-                                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-                                <MudText Class="mt-2">Buscando mesas disponibles...</MudText>
+                            var cantActual = _preOrden.ContainsKey(prod.Id) ? _preOrden[prod.Id] : 0;
+                            <div class="col-12 col-sm-6">
+                                <div class="card p-3 d-flex flex-row align-items-center justify-content-between h-100 border">
+                                    <div>
+                                        <h6 class="fw-bold mb-0">@prod.Nombre</h6>
+                                        <small class="fw-bold" style="color: var(--sabor-burgundy);">Bs. @prod.Precio.ToString("N2")</small>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled="@(cantActual == 0)"
+                                                @onclick="() => CambiarCantidad(prod.Id, -1)">
+                                            <i class="bi bi-dash"></i>
+                                        </button>
+                                        <span class="fw-bold">@cantActual</span>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => CambiarCantidad(prod.Id, 1)">
+                                            <i class="bi bi-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         }
-                        else if (!_mesasDisponibles.Any())
-                        {
-                            <MudAlert Severity="Severity.Warning" Class="mb-4">
-                                No hay mesas disponibles para @_numPersonas personas en esa fecha y hora. Por favor intente otro horario o fecha.
-                            </MudAlert>
-                        }
-                        else
-                        {
-                            <MudGrid Spacing="3" Class="mb-6">
-                                @foreach (var mesa in _mesasDisponibles)
-                                {
-                                    var seleccionada = _mesaSeleccionada?.Id == mesa.Id;
-                                    <MudItem xs="12" sm="6" md="4">
-                                        <MudCard Elevation="@(seleccionada ? 6 : 1)" 
-                                                 Class="pa-3 text-center cursor-pointer"
-                                                 Style="@(seleccionada ? "border: 2px solid #610000; background: #fff8f8;" : "border: 1px solid #e0e0e0;")"
-                                                 @onclick="@(() => SelectMesa(mesa))">
-                                            <MudIcon Icon="@Icons.Material.Filled.TableBar" Color="Color.Primary" Size="Size.Large" Class="mb-1" />
-                                            <MudText Typo="Typo.subtitle1" Class="font-weight-bold">Mesa #@mesa.NumeroMesa</MudText>
-                                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Capacidad: @mesa.CapacidadPersonas personas</MudText>
-                                        </MudCard>
-                                    </MudItem>
-                                }
-                            </MudGrid>
-                        }
-
-                        <MudDivider Class="my-4" />
-
-                        <!-- PRE-ORDEN OPCIONAL DE PLATILLOS -->
-                        <MudText Typo="Typo.h6" Class="mb-1" Style="font-family: 'Playfair Display', serif; color: #610000;">
-                            Pre-orden de Platillos (Opcional)
-                        </MudText>
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-3">
-                            Puede ordenar sus platos ahora para que estén listos al llegar. Si lo prefiere, ordene directamente en el restaurante.
-                        </MudText>
-
-                        <MudGrid Spacing="2" Class="mb-4">
-                            @foreach (var prod in _productosMenu)
-                            {
-                                var cantActual = _preOrden.ContainsKey(prod.Id) ? _preOrden[prod.Id] : 0;
-                                <MudItem xs="12" sm="6">
-                                    <MudCard Elevation="1" Class="pa-3 d-flex align-center justify-space-between" Style="border: 1px solid #e0e0e0;">
-                                        <div>
-                                            <MudText Typo="Typo.subtitle2" Class="font-weight-bold">@prod.Nombre</MudText>
-                                            <MudText Typo="Typo.caption" Style="color: #610000;">Bs. @prod.Precio.ToString("N2")</MudText>
-                                        </div>
-                                        <div class="d-flex align-center gap-1">
-                                            <MudIconButton Icon="@Icons.Material.Filled.Remove" Size="Size.Small" Color="Color.Default"
-                                                           Disabled="@(cantActual == 0)"
-                                                           OnClick="@(() => CambiarCantidad(prod.Id, -1))" />
-                                            <MudText Typo="Typo.body2" Class="mx-1 font-weight-bold">@cantActual</MudText>
-                                            <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small" Color="Color.Primary"
-                                                           OnClick="@(() => CambiarCantidad(prod.Id, 1))" />
-                                        </div>
-                                    </MudCard>
-                                </MudItem>
-                            }
-                        </MudGrid>
-
-                        <MudTextField @bind-Value="_notasEspeciales" 
-                                      Label="Notas Especiales / Alergias Alimentarias" 
-                                      Variant="Variant.Outlined" 
-                                      Lines="2" 
-                                      Placeholder="Ej: Aniversario especial, una persona celíaca, mesa con buena iluminación..." />
-
-                        <div class="d-flex justify-space-between mt-6">
-                            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@(() => NextStep(0))">
-                                ← Volver
-                            </MudButton>
-                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="sabor-bg-burgundy px-6" 
-                                       Disabled="@(_mesaSeleccionada == null || _guardandoReserva)"
-                                       OnClick="@(() => ConfirmarReserva())" Style="border-radius: 8px; font-weight: 600;">
-                                @if (_guardandoReserva)
-                                {
-                                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                                    <MudText Class="ms-2">Guardando...</MudText>
-                                }
-                                else
-                                {
-                                    <MudText>Confirmar Datos de Mesa →</MudText>
-                                }
-                            </MudButton>
-                        </div>
                     </div>
-                </MudTabPanel>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Notas Especiales / Alergias Alimentarias</label>
+                        <textarea class="form-control" rows="2" @bind="_notasEspeciales"
+                                  placeholder="Ej: Aniversario especial, una persona celíaca, mesa con buena iluminación..."></textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-secondary" @onclick="() => NextStep(0)">
+                            <i class="bi bi-arrow-left me-2"></i>Volver
+                        </button>
+                        <button type="button" class="btn btn-sabor-burgundy px-4 py-2"
+                                disabled="@(_mesaSeleccionada == null || _guardandoReserva)"
+                                @onclick="ConfirmarReserva">
+                            @if (_guardandoReserva)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                <span>Guardando...</span>
+                            }
+                            else
+                            {
+                                <span>Confirmar Datos de Mesa <i class="bi bi-arrow-right ms-2"></i></span>
+                            }
+                        </button>
+                    </div>
+                }
 
                 <!-- PASO 3: CONFIRMACIÓN Y COMPROBANTE -->
-                <MudTabPanel Text="3. Confirmación" Icon="@Icons.Material.Filled.CheckCircle" Disabled="@(_currentStep != 2)">
-                    <div class="text-center py-6">
-                        <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Size="Size.Large" Style="color: #735c00; font-size: 4rem;" Class="mb-2" />
-                        <MudText Typo="Typo.h5" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+                @if (_currentStep == 2)
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-check-circle-fill fs-1 text-success mb-2 d-inline-block"></i>
+                        <h4 class="font-playfair fw-bold" style="color: var(--sabor-burgundy);">
                             ¡Su Mesa Está Reservada!
-                        </MudText>
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-6">
+                        </h4>
+                        <p class="text-muted mb-4">
                             Hemos registrado su reservación con éxito en Tarija.
-                        </MudText>
+                        </p>
 
-                        <div class="pa-4 rounded-lg mx-auto mb-6 text-left" style="background-color: #f8f9fa; border: 1px solid #e3beb8; max-width: 440px;">
-                            <div class="d-flex justify-space-between mb-2">
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">CÓDIGO RESERVA:</MudText>
-                                <MudText Typo="Typo.subtitle2" Class="font-weight-bold" Style="color: #610000;">@_codigoGenerado</MudText>
+                        <div class="p-4 rounded-3 mx-auto mb-4 text-start bg-light border" style="max-width: 440px;">
+                            <div class="d-flex justify-content-between mb-2">
+                                <small class="text-muted">CÓDIGO RESERVA:</small>
+                                <strong class="fs-6" style="color: var(--sabor-burgundy);">@_codigoGenerado</strong>
                             </div>
-                            <MudDivider Class="my-2" />
-                            <MudGrid Spacing="1">
-                                <MudItem xs="6">
-                                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">FECHA:</MudText>
-                                    <MudText Typo="Typo.body2" Class="font-weight-bold">@_selectedDate?.ToString("dd/MM/yyyy")</MudText>
-                                </MudItem>
-                                <MudItem xs="6">
-                                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">HORA:</MudText>
-                                    <MudText Typo="Typo.body2" Class="font-weight-bold">@_selectedTime?.ToString("hh\\:mm") hrs</MudText>
-                                </MudItem>
-                                <MudItem xs="6">
-                                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">COMENSALES:</MudText>
-                                    <MudText Typo="Typo.body2" Class="font-weight-bold">@_numPersonas Personas</MudText>
-                                </MudItem>
-                                <MudItem xs="6">
-                                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">MESA:</MudText>
-                                    <MudText Typo="Typo.body2" Class="font-weight-bold">Mesa #@(_mesaSeleccionada?.NumeroMesa)</MudText>
-                                </MudItem>
-                            </MudGrid>
+                            <hr class="my-2" />
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">FECHA:</small>
+                                    <strong>@_selectedDate?.ToString("dd/MM/yyyy")</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">HORA:</small>
+                                    <strong>@_selectedTime?.ToString("hh\\:mm") hrs</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">MESA:</small>
+                                    <strong>#@(_mesaSeleccionada?.NumeroMesa ?? 0)</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">COMENSALES:</small>
+                                    <strong>@_numPersonas Personas</strong>
+                                </div>
+                            </div>
+
                             @if (_preOrden.Any(x => x.Value > 0))
                             {
-                                <MudDivider Class="my-2" />
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mb-1">PLATILLOS PRE-ORDENADOS:</MudText>
+                                <hr class="my-3" />
+                                <small class="text-muted fw-bold d-block mb-1">PLATILLOS PRE-ORDENADOS:</small>
                                 @foreach (var pair in _preOrden.Where(p => p.Value > 0))
                                 {
                                     var pr = _productosMenu.FirstOrDefault(p => p.Id == pair.Key);
                                     if (pr != null)
                                     {
-                                        <MudText Typo="Typo.body2" Class="d-block">
+                                        <div class="small text-dark">
                                             • @pair.Value x @pr.Nombre (Bs. @((pair.Value * pr.Precio).ToString("N2")))
-                                        </MudText>
+                                        </div>
                                     }
                                 }
                             }
                         </div>
 
-                        <div class="d-flex justify-center gap-3">
-                            <MudButton Variant="Variant.Filled" Color="Color.Secondary" 
-                                       StartIcon="@Icons.Material.Filled.Download"
-                                       OnClick="DownloadTicket"
-                                       Style="background-color: #fed65b; color: #735c00; font-weight: 700; border-radius: 8px;">
-                                COMPROBANTE LISTO
-                            </MudButton>
-                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" 
-                                       OnClick="@(() => Navigation.NavigateTo("mis-reservas"))"
-                                       Style="border-color: #610000; border-radius: 8px; font-weight: 600;">
-                                VER EN MIS RESERVAS
-                            </MudButton>
+                        <div class="d-flex justify-content-center gap-3">
+                            <button type="button" class="btn btn-sabor-gold fw-bold px-4" @onclick="DownloadTicket">
+                                <i class="bi bi-download me-2"></i>COMPROBANTE LISTO
+                            </button>
+                            <button type="button" class="btn btn-outline-danger fw-bold px-4" @onclick="@(() => Navigation.NavigateTo("mis-reservas"))">
+                                <i class="bi bi-calendar-check me-2"></i>VER EN MIS RESERVAS
+                            </button>
                         </div>
                     </div>
-                </MudTabPanel>
-
-            </MudTabs>
-        </MudCard>
-    </MudItem>
+                }
+            </div>
+        </div>
+    </div>
 
     <!-- COLUMNA RESUMEN -->
-    <MudItem xs="12" md="4">
-        <MudCard Class="sabor-card pa-4" Elevation="3">
-            <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: var(--color-primary); font-weight: 700;">
+    <div class="col-12 col-md-4">
+        <div class="card sabor-card p-4 border-0 shadow-sm">
+            <h5 class="font-playfair fw-bold mb-3" style="color: var(--sabor-burgundy);">
                 Resumen de su Reserva
-            </MudText>
-            
-            <div class="pa-3 mb-4 rounded-lg" style="background-color: rgba(254, 214, 91, 0.12); border: 1px solid #fed65b;">
-                <MudText Typo="Typo.caption" Class="font-weight-bold d-block mb-1" Style="color: #735c00;">
-                    <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Small" Class="mr-1" /> BENEFICIO SOCIO VIP
-                </MudText>
-                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            </h5>
+
+            <div class="p-3 mb-4 rounded-3" style="background-color: rgba(254, 214, 91, 0.12); border: 1px solid #fed65b;">
+                <small class="fw-bold d-block mb-1" style="color: #735c00;">
+                    <i class="bi bi-cup-hot-fill me-1"></i> BENEFICIO SOCIO VIP
+                </small>
+                <small class="text-muted">
                     Copa de cortesía de Tannat Aranjuez de bienvenida para usted y sus acompañantes.
-                </MudText>
+                </small>
             </div>
 
-            <MudList T="string" ReadOnly="true" Dense="true" Class="pa-0">
-                <MudListItem Icon="@Icons.Material.Filled.CalendarToday" IconColor="Color.Primary">
-                    <MudText Typo="Typo.body2"><b>Fecha:</b> @_selectedDate?.ToString("dd/MM/yyyy")</MudText>
-                </MudListItem>
-                <MudListItem Icon="@Icons.Material.Filled.AccessTime" IconColor="Color.Primary">
-                    <MudText Typo="Typo.body2"><b>Hora:</b> @_selectedTime?.ToString("hh\\:mm")</MudText>
-                </MudListItem>
-                <MudListItem Icon="@Icons.Material.Filled.People" IconColor="Color.Primary">
-                    <MudText Typo="Typo.body2"><b>Personas:</b> @_numPersonas comensales</MudText>
-                </MudListItem>
-                @if (_mesaSeleccionada != null)
-                {
-                    <MudListItem Icon="@Icons.Material.Filled.TableBar" IconColor="Color.Secondary">
-                        <MudText Typo="Typo.body2"><b>Mesa:</b> Mesa #@_mesaSeleccionada.NumeroMesa</MudText>
-                    </MudListItem>
-                }
-            </MudList>
+            <ul class="list-group list-group-flush small mb-3">
+                <li class="list-group-item d-flex align-items-center px-0">
+                    <i class="bi bi-calendar-event text-danger me-3 fs-5"></i>
+                    <div>
+                        <strong>Fecha:</strong> @_selectedDate?.ToString("dd/MM/yyyy")
+                    </div>
+                </li>
+                <li class="list-group-item d-flex align-items-center px-0">
+                    <i class="bi bi-clock text-danger me-3 fs-5"></i>
+                    <div>
+                        <strong>Hora:</strong> @_selectedTime?.ToString("hh\\:mm")
+                    </div>
+                </li>
+                <li class="list-group-item d-flex align-items-center px-0">
+                    <i class="bi bi-people text-danger me-3 fs-5"></i>
+                    <div>
+                        <strong>Personas:</strong> @_numPersonas comensales
+                    </div>
+                </li>
+                <li class="list-group-item d-flex align-items-center px-0">
+                    <i class="bi bi-tag text-danger me-3 fs-5"></i>
+                    <div>
+                        <strong>Motivo:</strong> @_motivoVisita
+                    </div>
+                </li>
+            </ul>
 
-            @if (_preOrden.Any(x => x.Value > 0))
-            {
-                <MudDivider Class="my-3" />
-                <MudText Typo="Typo.subtitle2" Class="mb-1 font-weight-bold" Style="color: #610000;">Pre-orden seleccionada:</MudText>
-                <ul style="padding-left: 20px; font-size: 0.85rem;">
-                    @foreach (var pair in _preOrden.Where(p => p.Value > 0))
-                    {
-                        var prod = _productosMenu.FirstOrDefault(p => p.Id == pair.Key);
-                        if (prod != null)
-                        {
-                            <li>@pair.Value x @prod.Nombre</li>
-                        }
-                    }
-                </ul>
-            }
+            <hr class="my-3" />
 
-            <MudDivider Class="my-3" />
-
-            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">
+            <small class="text-muted d-block mb-2">
                 ¿Desea explorar más nuestra carta?
-            </MudText>
-            <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.RestaurantMenu"
-                       OnClick="@(() => Navigation.NavigateTo("menu"))"
-                       Class="px-0 mt-1" Style="font-weight: 700;">
+            </small>
+            <button type="button" class="btn btn-link p-0 text-decoration-none fw-bold" style="color: var(--sabor-burgundy);"
+                    @onclick="@(() => Navigation.NavigateTo("menu"))">
                 Ver Carta Culinaria →
-            </MudButton>
-        </MudCard>
-    </MudItem>
-</MudGrid>
+            </button>
+        </div>
+    </div>
+</div>
 
 @code {
-    private MudTabs? _tabs;
     private int _currentStep = 0;
 
-    private DateTime? _selectedDate = DateTime.Today.AddDays(1);
-    private TimeSpan? _selectedTime = new TimeSpan(19, 30, 0);
+    private DateOnly? _selectedDate = DateOnly.FromDateTime(DateTime.Today.AddDays(1));
+    private TimeOnly? _selectedTime = new TimeOnly(19, 30);
     private int _numPersonas = 4;
     private string _motivoVisita = "Almuerzo / Cena Familiar";
     private string _notasEspeciales = "";
@@ -329,49 +339,54 @@
     protected override async Task OnInitializedAsync()
     {
         _productosMenu = await ProductoService.GetProductosDisponiblesAsync();
+        foreach (var prod in _productosMenu)
+        {
+            _preOrden[prod.Id] = 0;
+        }
     }
 
     private async Task IrAPaso2()
     {
         if (_selectedDate == null || _selectedTime == null)
         {
-            Snackbar.Add("Seleccione una fecha y hora válidas.", Severity.Warning);
+            Toast.ShowError("Por favor seleccione una fecha y hora válidas.");
             return;
         }
 
-        _currentStep = 1;
         _buscandoMesas = true;
+        _currentStep = 1;
         _mesaSeleccionada = null;
 
-        var fecha = DateOnly.FromDateTime(_selectedDate.Value);
-        var hora = TimeOnly.FromTimeSpan(_selectedTime.Value);
+        var fecha = _selectedDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var hora = _selectedTime ?? new TimeOnly(19, 30);
 
         _mesasDisponibles = await ReservaService.GetMesasDisponiblesAsync(fecha, hora, _numPersonas);
         _buscandoMesas = false;
-
-        if (_mesasDisponibles.Any())
-        {
-            _mesaSeleccionada = _mesasDisponibles.First();
-        }
     }
 
     private void SelectMesa(Mesa mesa)
     {
         _mesaSeleccionada = mesa;
-        Snackbar.Add($"Mesa #{mesa.NumeroMesa} seleccionada", Severity.Info);
     }
 
-    private void CambiarCantidad(int productoId, int delta)
+    private void CambiarCantidad(int prodId, int delta)
     {
-        if (!_preOrden.ContainsKey(productoId)) _preOrden[productoId] = 0;
-        _preOrden[productoId] = Math.Max(0, _preOrden[productoId] + delta);
+        if (_preOrden.ContainsKey(prodId))
+        {
+            var actual = _preOrden[prodId];
+            var nuevo = actual + delta;
+            if (nuevo >= 0)
+            {
+                _preOrden[prodId] = nuevo;
+            }
+        }
     }
 
     private async Task ConfirmarReserva()
     {
-        if (_mesaSeleccionada == null || _selectedDate == null || _selectedTime == null)
+        if (_mesaSeleccionada == null)
         {
-            Snackbar.Add("Debe seleccionar una mesa antes de confirmar.", Severity.Warning);
+            Toast.ShowWarning("Por favor seleccione una mesa de las disponibles.");
             return;
         }
 
@@ -383,13 +398,13 @@
 
         if (!int.TryParse(userIdStr, out int userId))
         {
-            Snackbar.Add("Error obteniendo su sesión de usuario. Vuelva a iniciar sesión.", Severity.Error);
+            Toast.ShowError("Error obteniendo su sesión de usuario. Vuelva a iniciar sesión.");
             _guardandoReserva = false;
             return;
         }
 
-        var fecha = DateOnly.FromDateTime(_selectedDate.Value);
-        var hora = TimeOnly.FromTimeSpan(_selectedTime.Value);
+        var fecha = _selectedDate ?? DateOnly.FromDateTime(DateTime.Today);
+        var hora = _selectedTime ?? new TimeOnly(19, 30);
 
         var preOrdenLista = new List<(int, int, decimal)>();
         foreach (var pair in _preOrden.Where(x => x.Value > 0))
@@ -408,7 +423,7 @@
 
         _guardandoReserva = false;
         _currentStep = 2;
-        Snackbar.Add($"¡Reserva registrada! Código: {_codigoGenerado}", Severity.Success);
+        Toast.ShowSuccess($"¡Reserva registrada! Código: {_codigoGenerado}");
     }
 
     private void NextStep(int stepIndex)
@@ -418,6 +433,6 @@
 
     private void DownloadTicket()
     {
-        Snackbar.Add($"Comprobante {_codigoGenerado} generado y listo.", Severity.Success);
+        Toast.ShowSuccess($"Comprobante {_codigoGenerado} generado y listo.");
     }
 }

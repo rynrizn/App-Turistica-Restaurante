@@ -1,84 +1,72 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using RestauranteTuristicoApp.Models
 @using RestauranteTuristicoApp.Services
 @inject MenuService MenuService
 @inject ComponentScanner Scanner
 
-<MudNavMenu Class="pa-2" Rounded="true" Color="Color.Primary" Margin="Margin.Normal">
-
-    @if (menuItems == null)
-    {
-        <!-- Indicador de carga mientras consulta la BD -->
-        <div class="d-flex align-center justify-center pa-4">
-            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
-            <MudText Class="ml-2" Typo="Typo.caption">Cargando menú...</MudText>
-        </div>
-    }
-    else
-    {
-        @foreach (var item in menuItems)
+<nav class="sabor-sidebar-nav">
+    <ul class="nav flex-column">
+        @if (menuItems == null)
         {
-            <!-- 1. Validación física con Reflection -->
-            @if (Scanner.ExisteComponente(item.NombreComponente))
+            <li class="nav-item pa-4 text-center text-muted my-3">
+                <div class="spinner-border spinner-border-sm text-danger me-2" role="status"></div>
+                <span>Cargando menú...</span>
+            </li>
+        }
+        else
+        {
+            @foreach (var item in menuItems)
             {
-                <!-- 2. Validación de Autenticación / Roles -->
-                @if (string.IsNullOrEmpty(item.RolRequerido))
+                @if (Scanner.ExisteComponente(item.NombreComponente))
                 {
-                    <!-- Opción Pública (Visibles para todos) -->
-                    <MudNavLink Href="@item.Ruta" Match="NavLinkMatch.Prefix" Icon="@ObtenerIconoMaterial(item.Icono)">
-                        @item.NombrePantalla
-                    </MudNavLink>
-                }
-                else
-                {
-                    <!-- Opción Protegida por Rol -->
-                    <AuthorizeView Roles="@item.RolRequerido">
-                        <Authorized>
-                            <MudNavLink Href="@item.Ruta" Match="NavLinkMatch.Prefix" Icon="@ObtenerIconoMaterial(item.Icono)">
-                                @item.NombrePantalla
-                            </MudNavLink>
-                        </Authorized>
-                    </AuthorizeView>
+                    @if (string.IsNullOrEmpty(item.RolRequerido))
+                    {
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="@item.Ruta" Match="@(item.Ruta == "" || item.Ruta == "/" ? NavLinkMatch.All : NavLinkMatch.Prefix)" @onclick="CerrarSidebarMovil">
+                                <i class="bi @ObtenerIconoBootstrap(item.Icono) me-3 fs-5"></i>
+                                <span>@item.NombrePantalla</span>
+                            </NavLink>
+                        </li>
+                    }
+                    else
+                    {
+                        <AuthorizeView Roles="@item.RolRequerido">
+                            <Authorized>
+                                <li class="nav-item">
+                                    <NavLink class="nav-link" href="@item.Ruta" Match="@(item.Ruta == "" || item.Ruta == "/" ? NavLinkMatch.All : NavLinkMatch.Prefix)" @onclick="CerrarSidebarMovil">
+                                        <i class="bi @ObtenerIconoBootstrap(item.Icono) me-3 fs-5"></i>
+                                        <span>@item.NombrePantalla</span>
+                                    </NavLink>
+                                </li>
+                            </Authorized>
+                        </AuthorizeView>
+                    }
                 }
             }
         }
-    }
-
-    <MudDivider Class="my-3" />
-
-    <!-- Botón Dinámico de Inicio/Cierre de Sesión -->
-    <AuthorizeView>
-        <Authorized>
-            <MudNavLink Href="logout" Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error">
-                Cerrar Sesión
-            </MudNavLink>
-        </Authorized>
-        <NotAuthorized>
-            <MudNavLink Href="login" Icon="@Icons.Material.Filled.Login" IconColor="Color.Primary">
-                Iniciar Sesión
-            </MudNavLink>
-        </NotAuthorized>
-    </AuthorizeView>
-
-</MudNavMenu>
+    </ul>
+</nav>
 
 @code {
     private List<MenuItem>? menuItems;
 
     protected override async Task OnInitializedAsync()
     {
-        // Cargar menú desde PostgreSQL al iniciar el componente
         menuItems = await MenuService.ObtenerMenuItemsAsync();
     }
 
-    // Helper para mapear texto de icono de BD a íconos vectoriales de MudBlazor
-    private string ObtenerIconoMaterial(string iconoBD) => iconoBD switch
+    private string ObtenerIconoBootstrap(string iconoBD) => iconoBD switch
     {
-        "Home" => Icons.Material.Filled.Home,
-        "Menu" => Icons.Material.Filled.RestaurantMenu,
-        "Cliente" => Icons.Material.Filled.EventAvailable,
-        "Empleado" => Icons.Material.Filled.TableBar,
-        "Administrador" => Icons.Material.Filled.AdminPanelSettings,
-        _ => Icons.Material.Filled.BookmarkBorder
+        "Home" => "bi-house-fill",
+        "Menu" => "bi-book-half",
+        "Cliente" => "bi-calendar-check",
+        "Empleado" => "bi-table",
+        "Administrador" => "bi-shield-lock-fill",
+        _ => "bi-bookmark"
     };
+
+    private async Task CerrarSidebarMovil()
+    {
+        await InvokeAsync(StateHasChanged);
+    }
 }

@@ -6,108 +6,105 @@
 @using RestauranteTuristicoApp.Services
 @inject ReservaService ReservaService
 @inject AuthenticationStateProvider AuthStateProvider
-@inject ISnackbar Snackbar
+@inject ToastService Toast
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Mis Reservas | Sabor & Tradición</PageTitle>
 
-<div class="d-flex justify-space-between align-center mb-6">
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-5 gap-3">
     <div>
-        <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+        <h1 class="font-playfair fw-bold mb-1" style="color: var(--sabor-burgundy);">
             Historial de Reservas
-        </MudText>
-        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+        </h1>
+        <p class="text-muted mb-0">
             Consulte y gestione todas sus reservaciones de mesa y cava.
-        </MudText>
+        </p>
     </div>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-               OnClick="@(() => Navigation.NavigateTo("reservas/nueva"))"
-               Class="sabor-bg-burgundy" Style="border-radius: 8px; font-weight: 600;">
-        NUEVA RESERVA
-    </MudButton>
+    <button type="button" class="btn btn-sabor-burgundy px-4 py-2" @onclick="@(() => Navigation.NavigateTo("reservas/nueva"))">
+        <i class="bi bi-plus-lg me-2"></i>NUEVA RESERVA
+    </button>
 </div>
 
 @if (_cargando)
 {
-    <div class="text-center py-12">
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-        <MudText Class="mt-3">Cargando sus reservas...</MudText>
+    <div class="text-center py-5">
+        <div class="spinner-border text-danger" role="status"></div>
+        <p class="text-muted mt-2">Cargando sus reservas...</p>
     </div>
 }
 else if (!_reservas.Any())
 {
-    <MudAlert Severity="Severity.Info" Class="my-6" Variant="Variant.Filled">
-        Aún no tiene reservas registradas. ¡Le invitamos a realizar su primera reservación en nuestra carta gastronómica!
-    </MudAlert>
+    <div class="alert alert-info py-4 text-center">
+        <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+        <h5 class="fw-bold">Aún no tiene reservas registradas</h5>
+        <p class="mb-0">¡Le invitamos a realizar su primera reservación en nuestra carta gastronómica!</p>
+    </div>
 }
 else
 {
-    <MudGrid Spacing="3">
+    <div class="row g-4">
         @foreach (var res in _reservas)
         {
             var mesaNum = res.ReservaMesas.FirstOrDefault()?.Mesa?.NumeroMesa.ToString() ?? "N/A";
-            <MudItem xs="12" md="6">
-                <MudCard Class="sabor-card pa-4" Elevation="2" Style="border-left: 4px solid #610000 !important;">
-                    <div class="d-flex justify-space-between align-start mb-2">
-                        <div>
-                            <MudText Typo="Typo.h6" Style="font-family: 'Playfair Display', serif; color: #191c1d; font-weight: 700;">
-                                Mesa #@mesaNum
-                            </MudText>
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                Código: <b>@res.CodigoReserva</b>
-                            </MudText>
+            <div class="col-12 col-md-6">
+                <div class="card sabor-card h-100 shadow-sm border-0 border-start border-4" style="border-left-color: var(--sabor-burgundy) !important;">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div>
+                                <h5 class="font-playfair fw-bold mb-1">Mesa #@mesaNum</h5>
+                                <small class="text-muted">Código: <strong>@res.CodigoReserva</strong></small>
+                            </div>
+                            <span class="badge @GetBadgeClass(res.Estado) px-3 py-2">
+                                @res.Estado
+                            </span>
                         </div>
-                        <MudChip T="string" Size="Size.Small" Color="@GetChipColor(res.Estado)" Variant="Variant.Filled">
-                            @res.Estado
-                        </MudChip>
-                    </div>
 
-                    <MudDivider Class="my-2" />
+                        <hr class="my-2" />
 
-                    <div class="my-2">
-                        <MudText Typo="Typo.body2" Class="mb-1">
-                            <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" Class="mr-1" />
-                            <b>@res.FechaReserva.ToString("dd/MM/yyyy")</b> a las <b>@res.HoraReserva.ToString("hh\\:mm")</b>
-                        </MudText>
-                        <MudText Typo="Typo.body2" Class="mb-1">
-                            <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="mr-1" />
-                            @res.CantidadPersonas comensales
-                        </MudText>
-                        @if (!string.IsNullOrWhiteSpace(res.Observaciones))
+                        <div class="my-2 flex-grow-1">
+                            <p class="mb-1 small">
+                                <i class="bi bi-calendar-event me-2 text-danger"></i>
+                                <strong>@res.FechaReserva.ToString("dd/MM/yyyy")</strong> a las <strong>@res.HoraReserva.ToString("hh\\:mm")</strong>
+                            </p>
+                            <p class="mb-2 small">
+                                <i class="bi bi-people me-2 text-danger"></i>
+                                @res.CantidadPersonas comensales
+                            </p>
+                            @if (!string.IsNullOrWhiteSpace(res.Observaciones))
+                            {
+                                <p class="text-muted small fst-italic mb-2">
+                                    Nota: @res.Observaciones
+                                </p>
+                            }
+                            @if (res.DetalleReservas.Any())
+                            {
+                                <div class="p-2 rounded bg-light border border-dashed small mt-2">
+                                    <strong class="d-block mb-1" style="color: var(--sabor-burgundy);">Pre-orden de Platillos:</strong>
+                                    @foreach (var det in res.DetalleReservas)
+                                    {
+                                        <div class="text-muted">
+                                            • @det.Cantidad x @det.Producto.Nombre (Bs. @((det.Cantidad * det.PrecioUnitario).ToString("N2")))
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        @if (res.Estado == "Pendiente" || res.Estado == "Confirmada")
                         {
-                            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2" Style="font-style: italic;">
-                                Note: @res.Observaciones
-                            </MudText>
-                        }
-                        @if (res.DetalleReservas.Any())
-                        {
-                            <div class="mt-2 pa-2 rounded" style="background-color: #fcf9f5; border: 1px dashed #e3beb8;">
-                                <MudText Typo="Typo.caption" Class="font-weight-bold" Style="color: #610000;">Pre-orden de Platillos:</MudText>
-                                @foreach (var det in res.DetalleReservas)
-                                {
-                                    <MudText Typo="Typo.caption" Class="d-block">
-                                        • @det.Cantidad x @det.Producto.Nombre (Bs. @((det.Cantidad * det.PrecioUnitario).ToString("N2")))
-                                    </MudText>
-                                }
+                            <div class="d-flex justify-content-end mt-3 pt-2 border-top">
+                                <button type="button" class="btn btn-outline-danger btn-sm px-3"
+                                        @onclick="() => Cancelar(res)">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                                </button>
                             </div>
                         }
                     </div>
-
-                    <MudCardActions Class="px-0 pb-0 pt-3 d-flex justify-end gap-2">
-                        @if (res.Estado == "Pendiente" || res.Estado == "Confirmada")
-                        {
-                            <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
-                                       OnClick="@(() => Cancelar(res))"
-                                       Style="border-radius: 6px;">
-                                Cancelar
-                            </MudButton>
-                        }
-                    </MudCardActions>
-                </MudCard>
-            </MudItem>
+                </div>
+            </div>
         }
-    </MudGrid>
+    </div>
 }
 
 @code {
@@ -138,21 +135,21 @@ else
         var resultado = await ReservaService.CancelarReservaAsync(res.Id, _userId);
         if (resultado.exito)
         {
-            Snackbar.Add(resultado.mensaje, Severity.Warning);
+            Toast.ShowWarning(resultado.mensaje);
             await CargarReservas();
         }
         else
         {
-            Snackbar.Add(resultado.mensaje, Severity.Error);
+            Toast.ShowError(resultado.mensaje);
         }
     }
 
-    private Color GetChipColor(string estado) => estado switch
+    private string GetBadgeClass(string estado) => estado switch
     {
-        "Confirmada" => Color.Success,
-        "Completada" => Color.Info,
-        "Cancelada" => Color.Error,
-        "Pendiente" => Color.Warning,
-        _ => Color.Default
+        "Confirmada" => "bg-success",
+        "Completada" => "bg-info",
+        "Cancelada" => "bg-danger",
+        "Pendiente" => "bg-warning text-dark",
+        _ => "bg-secondary"
     };
 }

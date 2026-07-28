@@ -3,37 +3,106 @@
 @attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
 @using Microsoft.EntityFrameworkCore
 @using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Services
 @inject AppWebContext DbContext
 @inject NavigationManager NavigationManager
-@inject ISnackbar Snackbar
+@inject ToastService Toast
 @rendermode InteractiveServer
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-12">
-    <MudPaper Elevation="4" Class="pa-8 rounded-lg">
-        <MudText Typo="Typo.h4" Align="Align.Center" Class="font-weight-bold mb-4" Style="font-family: 'Playfair Display', serif; color: #8B0000;">
-            Crear Cuenta
-        </MudText>
+<div class="card sabor-auth-card border-0 shadow-lg">
+    <div class="card-body p-4 p-md-5">
+        <div class="text-center mb-4">
+            <i class="bi bi-person-plus-fill fs-1 text-warning"></i>
+            <h2 class="font-playfair fw-bold mt-2 mb-1" style="color: var(--sabor-burgundy);">
+                Crear Cuenta
+            </h2>
+            <p class="text-muted small">Únete a Sabor & Tradición</p>
+        </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+            <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+                <div>@errorMessage</div>
+            </div>
         }
 
-        <MudTextField @bind-Value="nombres" Label="Nombres *" Variant="Variant.Outlined" Class="mb-3" />
-        <MudTextField @bind-Value="apellidos" Label="Apellidos *" Variant="Variant.Outlined" Class="mb-3" />
-        <MudTextField @bind-Value="email" Label="Correo Electrónico *" Variant="Variant.Outlined" Class="mb-3" />
-        <MudTextField @bind-Value="telefono" Label="Teléfono / Celular" Variant="Variant.Outlined" Class="mb-3" />
-        <MudTextField @bind-Value="password" Label="Contraseña *" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-6" />
+        <div class="row g-2 mb-3">
+            <div class="col-12 col-md-6">
+                <div class="form-floating">
+                    <input type="text" class="form-control @(GetClaseValidacion(EsNombresValido()))" 
+                           id="floatingNombres" placeholder="Nombres" @bind="nombres" @bind:event="oninput" />
+                    <label for="floatingNombres">Nombres *</label>
+                </div>
+                @if (_intentoEnvio && !EsNombresValido())
+                {
+                    <div class="text-danger small mt-1">Ingrese sus nombres (mín. 2 caracteres).</div>
+                }
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="form-floating">
+                    <input type="text" class="form-control @(GetClaseValidacion(EsApellidosValido()))" 
+                           id="floatingApellidos" placeholder="Apellidos" @bind="apellidos" @bind:event="oninput" />
+                    <label for="floatingApellidos">Apellidos *</label>
+                </div>
+                @if (_intentoEnvio && !EsApellidosValido())
+                {
+                    <div class="text-danger small mt-1">Ingrese sus apellidos (mín. 2 caracteres).</div>
+                }
+            </div>
+        </div>
 
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Size="Size.Large" OnClick="ProcesarRegistro">
+        <div class="mb-3">
+            <div class="form-floating">
+                <input type="email" class="form-control @(GetClaseValidacion(EsEmailValido()))" 
+                       id="floatingRegEmail" placeholder="correo@ejemplo.com" @bind="email" @bind:event="oninput" />
+                <label for="floatingRegEmail"><i class="bi bi-envelope me-2"></i>Correo Electrónico *</label>
+            </div>
+            @if (_intentoEnvio && !EsEmailValido())
+            {
+                <div class="text-danger small mt-1">Ingrese un correo electrónico válido con &#64; y punto (.com).</div>
+            }
+        </div>
+
+        <div class="mb-3">
+            <div class="form-floating">
+                <input type="tel" class="form-control @(GetClaseValidacion(EsTelefonoValido()))" 
+                       id="floatingTel" placeholder="Teléfono" @bind="telefono" @bind:event="oninput" />
+                <label for="floatingTel"><i class="bi bi-telephone me-2"></i>Teléfono / Celular *</label>
+            </div>
+            @if (_intentoEnvio && !EsTelefonoValido())
+            {
+                <div class="text-danger small mt-1">El número de teléfono debe tener al menos 7 dígitos (ej: 70123456).</div>
+            }
+        </div>
+
+        <div class="mb-4">
+            <div class="form-floating">
+                <input type="password" class="form-control @(GetClaseValidacion(EsPasswordValido()))" 
+                       id="floatingRegPass" placeholder="Contraseña" @bind="password" @bind:event="oninput" />
+                <label for="floatingRegPass"><i class="bi bi-lock me-2"></i>Contraseña *</label>
+            </div>
+            @if (_intentoEnvio && !EsPasswordValido())
+            {
+                <div class="text-danger small mt-1">La contraseña debe tener al menos 6 caracteres.</div>
+            }
+        </div>
+
+        <button type="button" class="btn btn-sabor-burgundy btn-lg w-100 mb-3" @onclick="ProcesarRegistro" disabled="@_procesando">
+            @if (_procesando)
+            {
+                <span class="spinner-border spinner-border-sm me-2"></span>
+            }
             Registrarse
-        </MudButton>
+        </button>
 
-        <MudButton Variant="Variant.Text" Color="Color.Secondary" FullWidth="true" Class="mt-3" OnClick="IrALogin">
-            Ya tengo cuenta, iniciar sesión
-        </MudButton>
-    </MudPaper>
-</MudContainer>
+        <div class="text-center">
+            <button type="button" class="btn btn-link text-decoration-none small" style="color: var(--sabor-on-surface-variant);" @onclick="IrALogin">
+                ¿Ya tienes cuenta? <strong style="color: var(--sabor-burgundy);">Iniciar sesión</strong>
+            </button>
+        </div>
+    </div>
+</div>
 
 @code {
     private string nombres = string.Empty;
@@ -43,20 +112,39 @@
     private string password = string.Empty;
     private string errorMessage = string.Empty;
 
+    private bool _intentoEnvio = false;
+    private bool _procesando = false;
+
+    private bool EsNombresValido() => !string.IsNullOrWhiteSpace(nombres) && nombres.Trim().Length >= 2;
+    private bool EsApellidosValido() => !string.IsNullOrWhiteSpace(apellidos) && apellidos.Trim().Length >= 2;
+    private bool EsEmailValido() => !string.IsNullOrWhiteSpace(email) && email.Contains("@") && email.Contains(".") && email.Trim().Length >= 5;
+    private bool EsTelefonoValido() => !string.IsNullOrWhiteSpace(telefono) && telefono.Trim().Length >= 7 && telefono.Trim().All(c => char.IsDigit(c) || c == '+' || c == '-' || c == ' ');
+    private bool EsPasswordValido() => !string.IsNullOrWhiteSpace(password) && password.Length >= 6;
+
+    private string GetClaseValidacion(bool esValido)
+    {
+        if (!_intentoEnvio) return "";
+        return esValido ? "is-valid" : "is-invalid";
+    }
+
     private async Task ProcesarRegistro()
     {
         errorMessage = string.Empty;
+        _intentoEnvio = true;
 
-        if (string.IsNullOrWhiteSpace(nombres) || string.IsNullOrWhiteSpace(apellidos) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        if (!EsNombresValido() || !EsApellidosValido() || !EsEmailValido() || !EsTelefonoValido() || !EsPasswordValido())
         {
-            errorMessage = "Todos los campos obligatorios deben ser llenados.";
+            errorMessage = "Por favor verifique los campos marcados en rojo en el formulario.";
+            Toast.ShowWarning("Hay campos incorrectos en el formulario de registro.");
             return;
         }
 
-        var existe = await DbContext.Usuarios.AnyAsync(u => u.Email == email);
+        _procesando = true;
+        var existe = await DbContext.Usuarios.AnyAsync(u => u.Email == email.Trim());
         if (existe)
         {
-            errorMessage = "El correo ya se encuentra registrado.";
+            _procesando = false;
+            errorMessage = "El correo electrónico ya se encuentra registrado.";
             return;
         }
 
@@ -65,10 +153,10 @@
 
         var nuevoUsuario = new Usuario
         {
-            Nombres = nombres,
-            Apellidos = apellidos,
-            Email = email,
-            Telefono = telefono,
+            Nombres = nombres.Trim(),
+            Apellidos = apellidos.Trim(),
+            Email = email.Trim(),
+            Telefono = telefono.Trim(),
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
             Estado = true,
             RolId = rolCliente?.Id ?? 3
@@ -77,7 +165,8 @@
         DbContext.Usuarios.Add(nuevoUsuario);
         await DbContext.SaveChangesAsync();
 
-        Snackbar.Add("Cuenta registrada correctamente. Inicia sesión.", Severity.Success);
+        _procesando = false;
+        Toast.ShowSuccess("Cuenta registrada correctamente. Inicia sesión.");
         NavigationManager.NavigateTo("/login");
     }
 

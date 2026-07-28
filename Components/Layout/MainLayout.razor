@@ -1,84 +1,89 @@
 @inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using RestauranteTuristicoApp.Components.Shared
 
-<MudThemeProvider Theme="SaborTheme.DefaultTheme" />
-<MudPopoverProvider />
-<MudDialogProvider />
-<MudSnackbarProvider />
+<!-- ToastContainer de Bootstrap -->
+<ToastContainer />
 
-<MudLayout>
-    <MudAppBar Elevation="2" Style="background: linear-gradient(135deg, #610000 0%, #8b0000 100%); color: white;">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@(() => ToggleDrawer())" />
-        
-        <MudIcon Icon="@Icons.Material.Filled.WineBar" Style="color: #fed65b;" Class="ml-2 mr-2" />
-        <MudText Typo="Typo.h6" Class="font-weight-bold" Style="font-family: 'Playfair Display', serif; color: white;">
-            Sabor & Tradición <span style="font-weight: 300; font-size: 0.85rem; color: #fed65b;">| TARIJA</span>
-        </MudText>
+<!-- Mini-header solo móvil -->
+<header class="sabor-mobile-header d-lg-none">
+    <button type="button" onclick="toggleSidebar()" class="btn text-white p-1 me-2" aria-label="Abrir menú">
+        <i class="bi bi-list fs-3"></i>
+    </button>
+    <span class="sabor-mobile-brand">
+        <i class="bi bi-cup-hot-fill text-warning me-2"></i>Sabor & Tradición
+    </span>
+</header>
 
-        <MudSpacer />
+<!-- Overlay para cerrar sidebar en móvil -->
+<div class="sabor-sidebar-overlay d-lg-none" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudButton Href="" Variant="Variant.Text" Style="color: white; font-weight: 500;" Class="mr-2">
-                Menú
-            </MudButton>
-            <MudButton Href="reservas" Variant="Variant.Outlined" Style="border-color: #fed65b; color: #fed65b; border-radius: 8px; font-weight: 600;" Class="mr-3" StartIcon="@Icons.Material.Filled.TableBar">
-                Reservar Mesa
-            </MudButton>
-        </MudHidden>
+<!-- SIDEBAR -->
+<aside class="sabor-sidebar" id="sidebar">
+    <!-- Logo -->
+    <div class="sabor-sidebar-brand">
+        <i class="bi bi-cup-hot-fill text-warning me-2"></i>
+        <span>Sabor & Tradición <small class="text-muted fs-6 d-block" style="font-weight: 400;">TARIJA</small></span>
+    </div>
 
-        <AuthorizeView Context="authContext">
+    <!-- Menú de Navegación -->
+    <NavMenu />
+
+    <!-- Sección de usuario autenticado abajo -->
+    <div class="sabor-sidebar-user mt-auto">
+        <AuthorizeView>
             <Authorized>
-                <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                    <ActivatorContent Context="menuContext">
-                        <MudAvatar Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Medium" Style="cursor: pointer; font-weight: bold; background-color: #fed65b; color: #735c00;">
-                            ST
-                        </MudAvatar>
-                    </ActivatorContent>
-                    <ChildContent>
-                        <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="perfil">Mi Perfil</MudMenuItem>
-                        <MudMenuItem Icon="@Icons.Material.Filled.EventAvailable" Href="mis-reservas">Mis Reservas</MudMenuItem>
-                        <MudDivider />
-                        <MudMenuItem Icon="@Icons.Material.Filled.Logout" Href="logout">Cerrar Sesión (@authContext.User.Identity?.Name)</MudMenuItem>
-                    </ChildContent>
-                </MudMenu>
+                @{
+                    var rol = context.User.FindFirst(ClaimTypes.Role)?.Value ?? context.User.FindFirst("role")?.Value;
+                }
+                <a href="perfil" class="d-flex align-items-center mb-3 p-2 rounded-3 text-decoration-none text-dark sabor-profile-card" title="Haga clic para acceder a su perfil">
+                    <div class="rounded-circle bg-warning text-dark fw-bold d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width: 44px; height: 44px; font-size: 1.1rem; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                        @(context.User.Identity?.Name?.Substring(0, 1).ToUpper() ?? "U")
+                    </div>
+                    <div class="overflow-hidden">
+                        <span class="d-block fw-bold text-truncate small" style="color: var(--sabor-burgundy);">@context.User.Identity?.Name</span>
+                        @if (!string.IsNullOrEmpty(rol))
+                        {
+                            <span class="badge bg-light text-dark border small mt-1">
+                                <i class="bi bi-shield-check me-1 text-warning"></i>@rol
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="small text-muted d-block">Ver mi perfil <i class="bi bi-arrow-right-short"></i></span>
+                        }
+                    </div>
+                </a>
+                <div class="d-grid gap-2">
+                    <a href="logout" class="btn btn-outline-danger btn-sm text-start">
+                        <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                    </a>
+                </div>
             </Authorized>
             <NotAuthorized>
-                <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-                    <ActivatorContent Context="menuContext">
-                        <MudAvatar Color="Color.Default" Variant="Variant.Filled" Size="Size.Medium" Style="cursor: pointer;">
-                            <MudIcon Icon="@Icons.Material.Filled.PersonOutline" />
-                        </MudAvatar>
-                    </ActivatorContent>
-                    <ChildContent>
-                        <MudMenuItem Icon="@Icons.Material.Filled.Login" Href="login">Iniciar Sesión</MudMenuItem>
-                        <MudMenuItem Icon="@Icons.Material.Filled.PersonAdd" Href="registro">Crear Cuenta</MudMenuItem>
-                    </ChildContent>
-                </MudMenu>
+                <div class="d-grid gap-2">
+                    <a href="login" class="btn btn-sabor-burgundy">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
+                    </a>
+                    <a href="registro" class="btn btn-outline-secondary">
+                        <i class="bi bi-person-plus me-2"></i>Crear Cuenta
+                    </a>
+                </div>
             </NotAuthorized>
         </AuthorizeView>
-    </MudAppBar>
+    </div>
+</aside>
 
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Variant="DrawerVariant.Responsive">
-        <NavMenu />
-    </MudDrawer>
-
-    <MudMainContent Class="pa-4 pa-md-6" Style="background-color: var(--color-surface); min-height: 100vh;">
-        <MudContainer MaxWidth="MaxWidth.Large" Class="py-2">
-            @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+<!-- CONTENIDO PRINCIPAL -->
+<main class="sabor-content">
+    <div class="container-fluid py-2">
+        @Body
+    </div>
+</main>
 
 <div id="blazor-error-ui" data-nosnippet>
     Se ha producido un error inesperado.
     <a href="." class="reload">Recargar</a>
     <span class="dismiss">🗙</span>
 </div>
-
-@code {
-    private bool _drawerOpen = true;
-
-    private void ToggleDrawer()
-    {
-        _drawerOpen = !_drawerOpen;
-    }
-}

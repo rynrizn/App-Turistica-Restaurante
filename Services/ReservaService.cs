@@ -226,4 +226,44 @@ public class ReservaService
             .OrderBy(f => f.Nombre)
             .ToListAsync();
     }
+
+    /// <summary>
+    /// Cancela automáticamente las reservas en estado Pendiente o Confirmada que han excedido el tiempo límite de llegada.
+    /// </summary>
+    public async Task<int> CancelarReservasExpiradasAsync(int tiempoLimiteMinutos)
+    {
+        using var context = _dbFactory.CreateDbContext();
+        var limiteFechaHora = DateTime.Now.AddMinutes(-tiempoLimiteMinutos);
+        var limiteFecha = DateOnly.FromDateTime(limiteFechaHora);
+        var limiteHora = TimeOnly.FromDateTime(limiteFechaHora);
+
+        var reservasExpiradas = await context.Reservas
+            .Where(r => (r.Estado == "Pendiente" || r.Estado == "Confirmada") &&
+                        (r.FechaReserva < limiteFecha ||
+                        (r.FechaReserva == limiteFecha && r.HoraReserva < limiteHora)))
+            .ToListAsync();
+
+        if (!reservasExpiradas.Any()) return 0;
+
+        foreach (var r in reservasExpiradas)
+        {
+            r.Estado = "Cancelada";
+            r.Observaciones = string.IsNullOrEmpty(r.Observaciones)
+                ? "Cancelada automáticamente: tiempo límite de llegada excedido"
+                : r.Observaciones + " | Cancelada automáticamente: tiempo límite excedido";
+        }
+
+        return await context.SaveChangesAsync();
+    }
+
+    public async Task<bool> CrearMesaAsync(Mesa mesa)
+    {
+        using var context = _dbFactory.CreateDbContext();
+        bool existeNumero = await context.Mesas.AnyAsync(m => m.NumeroMesa == mesa.NumeroMesa);
+        if (existeNumero) return false;
+
+        context.Mesas.Add(mesa);
+        await context.SaveChangesAsync();
+        return true;
+    }
 }

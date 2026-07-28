@@ -6,114 +6,177 @@
 @using RestauranteTuristicoApp.Models
 @using RestauranteTuristicoApp.Services
 @inject UsuarioService UsuarioService
-@inject ISnackbar Snackbar
-@inject IDialogService DialogService
+@inject ToastService Toast
 
-<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
-    <div class="d-flex justify-content-between align-center mb-4">
-        <MudText Typo="Typo.h4" Class="font-weight-bold" Style="color: #8B0000;">
+<PageTitle>Gestión de Usuarios | Sabor & Tradición</PageTitle>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-5 gap-3">
+    <div>
+        <h1 class="font-playfair fw-bold mb-1" style="color: var(--sabor-burgundy);">
             Gestión de Usuarios
-        </MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="PrepararNuevoUsuario">
-            Adicionar Usuario
-        </MudButton>
+        </h1>
+        <p class="text-muted mb-0">
+            Administración de personal, clientes y roles de acceso del restaurante.
+        </p>
     </div>
+    <button type="button" class="btn btn-sabor-burgundy px-4 py-2" @onclick="PrepararNuevoUsuario">
+        <i class="bi bi-person-plus-fill me-2"></i>Adicionar Usuario
+    </button>
+</div>
 
-    <!-- TABLA DE USUARIOS ACTIVOS -->
-    <MudPaper Elevation="3" Class="pa-4 rounded-lg">
-        @if (usuarios == null)
-        {
-            <div class="d-flex align-center justify-center pa-8">
-                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-            </div>
-        }
-        else
-        {
-            <MudTable Items="@usuarios" Hover="true" Striped="true" Elevation="0">
-                <HeaderContent>
-                    <MudTh>Nombres</MudTh>
-                    <MudTh>Apellidos</MudTh>
-                    <MudTh>Email</MudTh>
-                    <MudTh>Rol</MudTh>
-                    <MudTh>Acciones</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd DataLabel="Nombres">@context.Nombres</MudTd>
-                    <MudTd DataLabel="Apellidos">@context.Apellidos</MudTd>
-                    <MudTd DataLabel="Email">@context.Email</MudTd>
-                    <MudTd DataLabel="Rol">
-                        <MudChip T="string" Color="Color.Info" Size="Size.Small">@(context.Rol?.Nombre ?? "Sin Rol")</MudChip>
-                    </MudTd>
-                    <MudTd DataLabel="Acciones">
-                        <!-- Botones de Acción Interactivos[cite: 11] -->
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="() => PrepararEdicion(context)" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => EliminarLogico(context.Id)" />
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-    </MudPaper>
-</MudContainer>
-
-<!-- FORMULARIO LATERAL (DRAWER) MULTIUSO (Nuevo / Edición) -->
-<MudDrawer @bind-Open="drawerAbierto" Anchor="Anchor.End" Elevation="5" Variant="@DrawerVariant.Temporary" Width="420px">
-    <MudDrawerHeader Class="border-bottom d-flex align-center justify-content-between pa-4">
-        <MudText Typo="Typo.h6" Class="font-weight-bold" Style="color: #8B0000;">
-            @(esEdicion ? "Modificar Empleado/Usuario" : "Nuevo Usuario")
-        </MudText>
-        <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CerrarDrawer" />
-    </MudDrawerHeader>
-
-    <div class="pa-6">
-        <EditForm Model="@usuarioEnEdicion" OnValidSubmit="GuardarCambios">
-            <DataAnnotationsValidator />
-
-            @if (!string.IsNullOrEmpty(mensajeError))
-            {
-                <MudAlert Severity="Severity.Error" Class="mb-4">@mensajeError</MudAlert>
-            }
-
-            <MudTextField @bind-Value="usuarioEnEdicion.Nombres" Label="Nombres *" Variant="Variant.Outlined" Class="mb-3" />
-            <MudTextField @bind-Value="usuarioEnEdicion.Apellidos" Label="Apellidos *" Variant="Variant.Outlined" Class="mb-3" />
-            <MudTextField @bind-Value="usuarioEnEdicion.Telefono" Label="Teléfono" Variant="Variant.Outlined" Class="mb-3" />
-            
-            @if (!esEdicion)
-            {
-                <!-- Email y Password solo se exigen al crear un usuario nuevo por seguridad -->
-                <MudTextField @bind-Value="usuarioEnEdicion.Email" Label="Correo Electrónico *" Variant="Variant.Outlined" Class="mb-3" />
-                <MudTextField @bind-Value="passwordInput" Label="Contraseña *" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-3" />
-            }
-
-            <MudSelect @bind-Value="usuarioEnEdicion.RolId" Label="Rol de Usuario *" Variant="Variant.Outlined" Class="mb-6">
-                @if (rolesList != null)
-                {
-                    @foreach (var rol in rolesList)
+<div class="card sabor-card p-4 border-0 shadow-sm">
+    @if (usuarios == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-danger" role="status"></div>
+            <p class="text-muted mt-2">Cargando usuarios activos...</p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Nombres</th>
+                        <th>Apellidos</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th class="text-end">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in usuarios)
                     {
-                        <MudSelectItem Value="@rol.Id">@rol.Nombre</MudSelectItem>
+                        <tr>
+                            <td><strong>@user.Nombres</strong></td>
+                            <td>@user.Apellidos</td>
+                            <td>@user.Email</td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    @(user.Rol?.Nombre ?? "Sin Rol")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-1" title="Editar"
+                                        @onclick="() => PrepararEdicion(user)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                @if (_confirmDeleteId == user.Id)
+                                {
+                                    <button type="button" class="btn btn-sm btn-danger fw-bold"
+                                            @onclick="() => EliminarLogico(user.Id)">
+                                        Confirmar
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                            @onclick="() => _confirmDeleteId = 0">
+                                        X
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar"
+                                            @onclick="() => ConfirmarEliminacion(user.Id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
                     }
-                }
-            </MudSelect>
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
 
-            <div class="d-flex justify-end gap-2 mt-4">
-                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="CerrarDrawer">Cancelar</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit" Disabled="guardando">
-                    @(guardando ? "Procesando..." : "Guardar Cambios")
-                </MudButton>
+<!-- MODAL BLAZOR PURO PARA NUEVO / EDICIÓN -->
+@if (drawerAbierto)
+{
+    <div class="modal fade show" style="display: block; background: rgba(0, 0, 0, 0.5);" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title font-playfair fw-bold" style="color: var(--sabor-burgundy);">
+                        @(esEdicion ? "Modificar Empleado/Usuario" : "Nuevo Usuario")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CerrarDrawer"></button>
+                </div>
+
+                <EditForm Model="@usuarioEnEdicion" OnValidSubmit="GuardarCambios">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body p-4">
+                        @if (!string.IsNullOrEmpty(mensajeError))
+                        {
+                            <div class="alert alert-danger small mb-3">@mensajeError</div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Nombres *</label>
+                            <input type="text" class="form-control" @bind="usuarioEnEdicion.Nombres" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Apellidos *</label>
+                            <input type="text" class="form-control" @bind="usuarioEnEdicion.Apellidos" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Teléfono</label>
+                            <input type="tel" class="form-control" @bind="usuarioEnEdicion.Telefono" />
+                        </div>
+
+                        @if (!esEdicion)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Correo Electrónico *</label>
+                                <input type="email" class="form-control" @bind="usuarioEnEdicion.Email" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Contraseña *</label>
+                                <input type="password" class="form-control" @bind="passwordInput" required />
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Rol de Usuario *</label>
+                            <select class="form-select" @bind="usuarioEnEdicion.RolId">
+                                @if (rolesList != null)
+                                {
+                                    @foreach (var rol in rolesList)
+                                    {
+                                        <option value="@rol.Id">@rol.Nombre</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-outline-secondary" @onclick="CerrarDrawer">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-sabor-burgundy" disabled="@guardando">
+                            @(guardando ? "Procesando..." : "Guardar Cambios")
+                        </button>
+                    </div>
+                </EditForm>
             </div>
-        </EditForm>
+        </div>
     </div>
-</MudDrawer>
+}
 
 @code {
     private List<Usuario>? usuarios;
     private List<Role>? rolesList;
     private Usuario usuarioEnEdicion = new();
     private string passwordInput = string.Empty;
-    
+
     private bool drawerAbierto = false;
     private bool guardando = false;
     private bool esEdicion = false;
     private string mensajeError = string.Empty;
+    private int _confirmDeleteId = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -122,14 +185,13 @@
 
     private async Task CargarActivos()
     {
-        // Carga únicamente registros vigentes[cite: 11]
         usuarios = await UsuarioService.GetUsuariosActivosAsync();
         rolesList = await UsuarioService.GetRolesAsync();
     }
 
     private void PrepararNuevoUsuario()
     {
-        usuarioEnEdicion = new Usuario();
+        usuarioEnEdicion = new Usuario { RolId = rolesList?.FirstOrDefault()?.Id ?? 3 };
         passwordInput = string.Empty;
         esEdicion = false;
         mensajeError = string.Empty;
@@ -138,8 +200,7 @@
 
     private void PrepararEdicion(Usuario usuarioOriginal)
     {
-        // Desacoplamiento: El clon evita que la tabla principal se modifique al escribir[cite: 11]
-        usuarioEnEdicion = usuarioOriginal.Clonar(); 
+        usuarioEnEdicion = usuarioOriginal.Clonar();
         esEdicion = true;
         mensajeError = string.Empty;
         drawerAbierto = true;
@@ -147,7 +208,6 @@
 
     private void CerrarDrawer()
     {
-        // Al cancelar, el objeto original queda intacto gracias al clon[cite: 11]
         drawerAbierto = false;
     }
 
@@ -160,28 +220,26 @@
         {
             if (esEdicion)
             {
-                // Flujo de Actualización Segura[cite: 11]
                 bool actualizado = await UsuarioService.ActualizarUsuarioAsync(usuarioEnEdicion);
                 if (actualizado)
                 {
-                    Snackbar.Add("Datos actualizados correctamente.", Severity.Success);
+                    Toast.ShowSuccess("Datos actualizados correctamente.");
                     await CargarActivos();
                     CerrarDrawer();
                 }
             }
             else
             {
-                // Flujo de Inserción
                 if (string.IsNullOrWhiteSpace(usuarioEnEdicion.Email) || string.IsNullOrWhiteSpace(passwordInput))
                 {
                     mensajeError = "Correo y contraseña son obligatorios al crear.";
                     return;
                 }
-                
+
                 bool registrado = await UsuarioService.InsertUsuarioAsync(usuarioEnEdicion, passwordInput);
                 if (registrado)
                 {
-                    Snackbar.Add("Usuario guardado exitosamente.", Severity.Success);
+                    Toast.ShowSuccess("Usuario guardado exitosamente.");
                     await CargarActivos();
                     CerrarDrawer();
                 }
@@ -201,22 +259,20 @@
         }
     }
 
+    private void ConfirmarEliminacion(int id)
+    {
+        _confirmDeleteId = id;
+        Toast.ShowWarning("Haga clic en 'Confirmar' para dar de baja al usuario.");
+    }
+
     private async Task EliminarLogico(int id)
     {
-        bool? result = await DialogService.ShowMessageBoxAsync(
-            "Confirmar Acción", 
-            "¿Estás seguro de eliminar este usuario?", 
-            yesText: "Eliminar", cancelText: "Cancelar");
-
-        if (result == true)
+        bool completado = await UsuarioService.DarDeBajaAsync(id);
+        if (completado)
         {
-            // Ejecuta la baja lógica en base de datos[cite: 11]
-            bool completado = await UsuarioService.DarDeBajaAsync(id);
-            if (completado)
-            {
-                Snackbar.Add("Usuario dado de baja.", Severity.Info);
-                await CargarActivos(); // Refresca reactivamente[cite: 11]
-            }
+            Toast.ShowInfo("Usuario dado de baja.");
+            _confirmDeleteId = 0;
+            await CargarActivos();
         }
     }
 }

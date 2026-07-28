@@ -4,91 +4,131 @@
 @using RestauranteTuristicoApp.Models
 @using RestauranteTuristicoApp.Services
 @inject IDbContextFactory<AppWebContext> DbFactory
-@inject ISnackbar Snackbar
+@inject ReservaService ReservaService
+@inject ToastService Toast
 @rendermode InteractiveServer
 
 <PageTitle>Estado y Gestión de Mesas | Sabor & Tradición</PageTitle>
 
-<div class="mb-6">
-    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
-        Gestión y Estado de Mesas
-    </MudText>
-    <MudText Typo="Typo.body2" Class="mud-text-secondary">
-        Control de disponibilidad del salón, terrazas y cavas del restaurante.
-    </MudText>
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+        <h1 class="font-playfair fw-bold mb-1" style="color: var(--sabor-burgundy);">
+            Gestión y Estado de Mesas
+        </h1>
+        <p class="text-muted mb-0">
+            Control de disponibilidad del salón, terrazas y cavas del restaurante.
+        </p>
+    </div>
+    <button class="btn btn-danger px-4 py-2 rounded-3" @onclick="AbrirModalMesa">
+        <i class="bi bi-plus-circle me-2"></i>NUEVA MESA
+    </button>
 </div>
+
+@if (_mostrarModalMesa)
+{
+    <div class="modal fade show d-block" style="background-color: rgba(0,0,0,0.5);" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header bg-light border-0">
+                    <h5 class="modal-title fw-bold" style="color: var(--sabor-burgundy);">Registrar Nueva Mesa</h5>
+                    <button type="button" class="btn-close" @onclick="CerrarModalMesa"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Número de Mesa</label>
+                        <input type="number" class="form-control" @bind="_nuevoNumeroMesa" min="1" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Capacidad (Personas)</label>
+                        <input type="number" class="form-control" @bind="_nuevaCapacidad" min="1" max="50" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" @onclick="CerrarModalMesa">Cancelar</button>
+                    <button type="button" class="btn btn-danger px-4" @onclick="GuardarNuevaMesa" disabled="@_guardandoMesa">
+                        @if (_guardandoMesa)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        Guardar Mesa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @if (_cargando)
 {
-    <div class="text-center py-12">
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-        <MudText Class="mt-3">Cargando estado de las mesas...</MudText>
+    <div class="text-center py-5">
+        <div class="spinner-border text-danger" role="status"></div>
+        <p class="text-muted mt-2">Cargando estado de las mesas...</p>
     </div>
 }
 else
 {
-    <MudGrid Spacing="4">
+    <div class="row g-4">
         @foreach (var mesa in _mesas)
         {
             var reservadaHoy = _mesasConReservaHoy.Contains(mesa.Id);
-            <MudItem xs="12" sm="6" md="3">
-                <MudCard Class="sabor-card pa-4 text-center d-flex flex-column justify-space-between" 
-                         Elevation="@(reservadaHoy ? 6 : 2)"
-                         Style="@(mesa.Estado == true ? (reservadaHoy ? "border: 2px solid #e06000; background: #fffdf9;" : "border: 1px solid #c8e6c9;") : "border: 1px solid #ffcdd2; opacity: 0.7;")">
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="card sabor-card h-100 p-4 text-center d-flex flex-column justify-content-between shadow-sm @(reservadaHoy ? "border-warning" : "border")"
+                     style="background: @(mesa.Estado == true ? (reservadaHoy ? "#fffdf9" : "#ffffff") : "#f8f9fa"); opacity: @(mesa.Estado == true ? "1" : "0.75");">
                     
                     <div>
-                        <MudIcon Icon="@Icons.Material.Filled.TableBar" 
-                                 Color="@(mesa.Estado == true ? (reservadaHoy ? Color.Warning : Color.Success) : Color.Error)" 
-                                 Size="Size.Large" Class="mb-2" />
+                        <i class="bi bi-table fs-1 mb-2 d-inline-block @(mesa.Estado == true ? (reservadaHoy ? "text-warning" : "text-success") : "text-danger")"></i>
                         
-                        <MudText Typo="Typo.h5" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #191c1d;">
+                        <h4 class="font-playfair fw-bold mb-1">
                             Mesa #@mesa.NumeroMesa
-                        </MudText>
+                        </h4>
 
-                        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
-                            Capacidad: <b>@mesa.CapacidadPersonas personas</b>
-                        </MudText>
+                        <p class="text-muted small mb-3">
+                            Capacidad: <strong>@mesa.CapacidadPersonas personas</strong>
+                        </p>
 
                         <div class="mb-3">
                             @if (!mesa.Estado == true)
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Error">Inhabilitada</MudChip>
+                                <span class="badge bg-danger">Inhabilitada</span>
                             }
                             else if (reservadaHoy)
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Warning" Icon="@Icons.Material.Filled.Event">
-                                    Reservada Hoy
-                                </MudChip>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="bi bi-calendar-event me-1"></i>Reservada Hoy
+                                </span>
                             }
                             else
                             {
-                                <MudChip T="string" Size="Size.Small" Color="Color.Success" Icon="@Icons.Material.Filled.CheckCircle">
-                                    Disponible
-                                </MudChip>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Disponible
+                                </span>
                             }
                         </div>
                     </div>
 
-                    <MudDivider Class="my-2" />
+                    <hr class="my-2" />
 
-                    <div class="d-flex justify-center mt-2">
-                        <MudButton Variant="Variant.Outlined" 
-                                   Color="@(mesa.Estado == true ? Color.Error : Color.Success)"
-                                   Size="Size.Small"
-                                   OnClick="@(() => ToggleEstadoMesa(mesa))">
+                    <div class="d-flex justify-content-center mt-2">
+                        <button type="button" class="btn btn-sm @(mesa.Estado == true ? "btn-outline-danger" : "btn-outline-success")"
+                                @onclick="() => ToggleEstadoMesa(mesa)">
                             @(mesa.Estado == true ? "Inhabilitar" : "Habilitar")
-                        </MudButton>
+                        </button>
                     </div>
-                </MudCard>
-            </MudItem>
+                </div>
+            </div>
         }
-    </MudGrid>
+    </div>
 }
 
 @code {
     private List<Mesa> _mesas = new();
     private HashSet<int> _mesasConReservaHoy = new();
     private bool _cargando = true;
+
+    private bool _mostrarModalMesa = false;
+    private int _nuevoNumeroMesa = 1;
+    private int _nuevaCapacidad = 4;
+    private bool _guardandoMesa = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,7 +161,55 @@ else
             entidad.Estado = !entidad.Estado;
             await db.SaveChangesAsync();
             mesa.Estado = entidad.Estado;
-            Snackbar.Add($"Mesa #{mesa.NumeroMesa} ha sido {(mesa.Estado == true ? "habilitada" : "inhabilitada")}.", Severity.Info);
+            Toast.ShowInfo($"Mesa #{mesa.NumeroMesa} ha sido {(mesa.Estado == true ? "habilitada" : "inhabilitada")}.");
+        }
+    }
+
+    private void AbrirModalMesa()
+    {
+        _nuevoNumeroMesa = (_mesas.Max(m => (int?)m.NumeroMesa) ?? 0) + 1;
+        _nuevaCapacidad = 4;
+        _mostrarModalMesa = true;
+    }
+
+    private void CerrarModalMesa()
+    {
+        _mostrarModalMesa = false;
+    }
+
+    private async Task GuardarNuevaMesa()
+    {
+        if (_nuevoNumeroMesa <= 0)
+        {
+            Toast.ShowWarning("El número de mesa debe ser mayor a 0.");
+            return;
+        }
+        if (_nuevaCapacidad <= 0)
+        {
+            Toast.ShowWarning("La capacidad de la mesa debe ser de al menos 1 persona.");
+            return;
+        }
+
+        _guardandoMesa = true;
+        var nueva = new Mesa
+        {
+            NumeroMesa = _nuevoNumeroMesa,
+            CapacidadPersonas = _nuevaCapacidad,
+            Estado = true
+        };
+
+        bool ok = await ReservaService.CrearMesaAsync(nueva);
+        _guardandoMesa = false;
+
+        if (ok)
+        {
+            Toast.ShowSuccess($"¡Mesa #{_nuevoNumeroMesa} (capacidad {_nuevaCapacidad} pers.) agregada con éxito!");
+            _mostrarModalMesa = false;
+            await CargarMesas();
+        }
+        else
+        {
+            Toast.ShowError($"Ya existe una mesa con el número #{_nuevoNumeroMesa}.");
         }
     }
 }

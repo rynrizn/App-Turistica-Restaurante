@@ -1,5 +1,5 @@
 @page "/admin/dashboard"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrador")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrador,Empleado")]
 @using RestauranteTuristicoApp.Models
 @using RestauranteTuristicoApp.Services
 @inject ReporteService ReporteService
@@ -8,145 +8,163 @@
 
 <PageTitle>Dashboard Administrativo | Sabor & Tradición</PageTitle>
 
-<div class="mb-6">
-    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+<div class="mb-5">
+    <h1 class="font-playfair fw-bold mb-1" style="color: var(--sabor-burgundy);">
         Dashboard Administrativo
-    </MudText>
-    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+    </h1>
+    <p class="text-muted mb-0">
         Métricas clave, rendimiento del restaurante y estadísticas operativas del mes.
-    </MudText>
+    </p>
 </div>
 
 @if (_cargando || _resumen == null)
 {
-    <div class="text-center py-12">
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
-        <MudText Class="mt-3">Calculando métricas y reportes...</MudText>
+    <div class="text-center py-5">
+        <div class="spinner-border text-danger" role="status"></div>
+        <p class="text-muted mt-2">Calculando métricas y reportes...</p>
     </div>
 }
 else
 {
     <!-- TARJETAS DE MÉTRICAS -->
-    <MudGrid Spacing="3" Class="mb-6">
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="pa-4 d-flex align-center justify-space-between" Style="border-left: 4px solid #610000;">
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card sabor-card h-100 p-4 d-flex flex-row align-items-center justify-content-between border-0 shadow-sm border-start border-4"
+                 style="border-left-color: var(--sabor-burgundy) !important;">
                 <div>
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary text-uppercase">Reservas Hoy</MudText>
-                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #610000;">
+                    <small class="text-muted text-uppercase fw-bold">Reservas Hoy</small>
+                    <h2 class="font-playfair fw-bold mb-0 mt-1" style="color: var(--sabor-burgundy);">
                         @_resumen.ReservasHoy
-                    </MudText>
+                    </h2>
                 </div>
-                <MudIcon Icon="@Icons.Material.Filled.Today" Color="Color.Primary" Size="Size.Large" />
-            </MudCard>
-        </MudItem>
+                <i class="bi bi-calendar-event fs-1 text-danger"></i>
+            </div>
+        </div>
 
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="pa-4 d-flex align-center justify-space-between" Style="border-left: 4px solid #ff9800;">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card sabor-card h-100 p-4 d-flex flex-row align-items-center justify-content-between border-0 shadow-sm border-start border-4 border-warning">
                 <div>
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary text-uppercase">Pendientes</MudText>
-                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #ff9800;">
+                    <small class="text-muted text-uppercase fw-bold">Pendientes</small>
+                    <h2 class="font-playfair fw-bold mb-0 mt-1 text-warning">
                         @_resumen.ReservasPendientes
-                    </MudText>
+                    </h2>
                 </div>
-                <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Warning" Size="Size.Large" />
-            </MudCard>
-        </MudItem>
+                <i class="bi bi-hourglass-split fs-1 text-warning"></i>
+            </div>
+        </div>
 
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="pa-4 d-flex align-center justify-space-between" Style="border-left: 4px solid #4caf50;">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card sabor-card h-100 p-4 d-flex flex-row align-items-center justify-content-between border-0 shadow-sm border-start border-4 border-success">
                 <div>
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary text-uppercase">Completadas Mes</MudText>
-                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #2e7d32;">
+                    <small class="text-muted text-uppercase fw-bold">Completadas Mes</small>
+                    <h2 class="font-playfair fw-bold mb-0 mt-1 text-success">
                         @_resumen.ReservasCompletadasMes
-                    </MudText>
+                    </h2>
                 </div>
-                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
-            </MudCard>
-        </MudItem>
+                <i class="bi bi-check-circle fs-1 text-success"></i>
+            </div>
+        </div>
 
-        <MudItem xs="12" sm="6" md="3">
-            <MudCard Elevation="3" Class="pa-4 d-flex align-center justify-space-between" Style="border-left: 4px solid #fed65b; background-color: #fffcf5;">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="card sabor-card h-100 p-4 d-flex flex-row align-items-center justify-content-between border-0 shadow-sm border-start border-4"
+                 style="border-left-color: #fed65b !important; background-color: #fffcf5;">
                 <div>
-                    <MudText Typo="Typo.caption" Class="mud-text-secondary text-uppercase">Total Facturado</MudText>
-                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #735c00;">
+                    <small class="text-muted text-uppercase fw-bold">Total Facturado</small>
+                    <h2 class="font-playfair fw-bold mb-0 mt-1" style="color: #735c00;">
                         Bs. @_resumen.TotalFacturadoMes.ToString("N0")
-                    </MudText>
+                    </h2>
                 </div>
-                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Large" Style="color: #735c00;" />
-            </MudCard>
-        </MudItem>
-    </MudGrid>
+                <i class="bi bi-cash-stack fs-1" style="color: #735c00;"></i>
+            </div>
+        </div>
+    </div>
 
-    <MudGrid Spacing="4">
+    <div class="row g-4">
         <!-- TOP PLATILLOS -->
-        <MudItem xs="12" md="5">
-            <MudCard Class="sabor-card pa-4" Elevation="3">
-                <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+        <div class="col-12 col-md-5">
+            <div class="card sabor-card h-100 p-4 border-0 shadow-sm">
+                <h5 class="font-playfair fw-bold mb-3" style="color: var(--sabor-burgundy);">
                     Top Platillos del Mes
-                </MudText>
+                </h5>
                 @if (!_resumen.TopPlatillos.Any())
                 {
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Aún no hay comandas registradas.</MudText>
+                    <p class="text-muted small">Aún no hay comandas registradas.</p>
                 }
                 else
                 {
-                    <MudTable Items="@_resumen.TopPlatillos" Dense="true" Hover="true" Elevation="0">
-                        <HeaderContent>
-                            <MudTh>Plato</MudTh>
-                            <MudTh>Categoría</MudTh>
-                            <MudTh>Total</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="Plato"><b>@context.NombreProducto</b></MudTd>
-                            <MudTd DataLabel="Categoría">
-                                <MudChip T="string" Size="Size.Small">@context.Categoria</MudChip>
-                            </MudTd>
-                            <MudTd DataLabel="Total">@context.CantidadTotal uds</MudTd>
-                        </RowTemplate>
-                    </MudTable>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Plato</th>
+                                    <th>Categoría</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in _resumen.TopPlatillos)
+                                {
+                                    <tr>
+                                        <td><strong>@p.NombreProducto</strong></td>
+                                        <td><span class="badge bg-light text-dark border">@p.Categoria</span></td>
+                                        <td class="text-end">@p.CantidadTotal uds</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 }
-            </MudCard>
-        </MudItem>
+            </div>
+        </div>
 
         <!-- ÚLTIMAS RESERVAS -->
-        <MudItem xs="12" md="7">
-            <MudCard Class="sabor-card pa-4" Elevation="3">
-                <div class="d-flex justify-space-between align-center mb-3">
-                    <MudText Typo="Typo.h6" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+        <div class="col-12 col-md-7">
+            <div class="card sabor-card h-100 p-4 border-0 shadow-sm">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="font-playfair fw-bold mb-0" style="color: var(--sabor-burgundy);">
                         Últimas Reservas Registradas
-                    </MudText>
-                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
-                               OnClick="@(() => Navigation.NavigateTo("gestion/pedidos"))">
+                    </h5>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none fw-bold" style="color: var(--sabor-burgundy);"
+                            @onclick="@(() => Navigation.NavigateTo("gestion/pedidos"))">
                         Ver todas →
-                    </MudButton>
+                    </button>
                 </div>
 
                 @if (!_resumen.UltimasReservas.Any())
                 {
-                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Sin reservas.</MudText>
+                    <p class="text-muted small">Sin reservas.</p>
                 }
                 else
                 {
-                    <MudTable Items="@_resumen.UltimasReservas" Dense="true" Hover="true" Elevation="0">
-                        <HeaderContent>
-                            <MudTh>Código</MudTh>
-                            <MudTh>Cliente</MudTh>
-                            <MudTh>Fecha / Hora</MudTh>
-                            <MudTh>Estado</MudTh>
-                        </HeaderContent>
-                        <RowTemplate>
-                            <MudTd DataLabel="Código"><b>@context.CodigoReserva</b></MudTd>
-                            <MudTd DataLabel="Cliente">@(context.Usuario?.Nombres ?? "Cliente")</MudTd>
-                            <MudTd DataLabel="Fecha / Hora">@context.FechaReserva.ToString("dd/MM") — @context.HoraReserva.ToString("hh\\:mm")</MudTd>
-                            <MudTd DataLabel="Estado">
-                                <MudChip T="string" Size="Size.Small" Color="@GetChipColor(context.Estado)">@context.Estado</MudChip>
-                            </MudTd>
-                        </RowTemplate>
-                    </MudTable>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Cliente</th>
+                                    <th>Fecha / Hora</th>
+                                    <th class="text-end">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in _resumen.UltimasReservas)
+                                {
+                                    <tr>
+                                        <td><strong>@r.CodigoReserva</strong></td>
+                                        <td>@(r.Usuario?.Nombres ?? "Cliente")</td>
+                                        <td>@r.FechaReserva.ToString("dd/MM") — @r.HoraReserva.ToString("hh\\:mm")</td>
+                                        <td class="text-end">
+                                            <span class="badge @GetBadgeClass(r.Estado)">@r.Estado</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
                 }
-            </MudCard>
-        </MudItem>
-    </MudGrid>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -160,12 +178,12 @@ else
         _cargando = false;
     }
 
-    private Color GetChipColor(string estado) => estado switch
+    private string GetBadgeClass(string estado) => estado switch
     {
-        "Confirmada" => Color.Success,
-        "Completada" => Color.Info,
-        "Cancelada" => Color.Error,
-        "Pendiente" => Color.Warning,
-        _ => Color.Default
+        "Confirmada" => "bg-success",
+        "Completada" => "bg-info",
+        "Cancelada" => "bg-danger",
+        "Pendiente" => "bg-warning text-dark",
+        _ => "bg-secondary"
     };
 }

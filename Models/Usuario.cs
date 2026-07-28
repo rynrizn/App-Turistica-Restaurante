@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
@@ -26,6 +26,8 @@ public partial class Usuario
     public virtual ICollection<Reserva> Reservas { get; set; } = new List<Reserva>();
 
     public virtual Role Rol { get; set; } = null!;
+
+    public string NombreCompleto => $"{Nombres} {Apellidos}".Trim();
 
     public Usuario Clonar()
     {
