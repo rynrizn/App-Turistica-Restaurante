@@ -1,25 +1,38 @@
 @page "/admin/productos"
-@attribute [Authorize(Roles = "Administrador")]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrador")]
 @rendermode InteractiveServer
 
 @using Microsoft.EntityFrameworkCore
 @using RestauranteTuristicoApp.Models
-@using RestauranteTuristicoApp.Components.Layout
-@using Microsoft.AspNetCore.Authorization
-@inject AppWebContext DbContext
+@using RestauranteTuristicoApp.Services
+@inject IDbContextFactory<AppWebContext> DbFactory
+@inject ProductoService ProductoService
+@inject ISnackbar Snackbar
 @inject IJSRuntime JS
 
+<PageTitle>Gestión del Menú | Sabor & Tradición</PageTitle>
+
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
-    <MudText Typo="Typo.h4" Class="mb-4 font-weight-bold" Style="color: #8B0000;">
-        Gestión del Menú (Buscador Maestro)
-    </MudText>
+    <div class="d-flex justify-space-between align-center mb-4">
+        <div>
+            <MudText Typo="Typo.h4" Class="font-weight-bold" Style="color: #8B0000; font-family: 'Playfair Display', serif;">
+                Gestión del Menú & Carta Gastronómica
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                Administración de platillos, precios, descripciones y disponibilidad.
+            </MudText>
+        </div>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="NuevoProducto" Class="sabor-bg-burgundy px-4" Style="border-radius: 8px; font-weight: 600;">
+            NUEVO PRODUCTO
+        </MudButton>
+    </div>
     <MudDivider Class="mb-6" />
 
     <MudGrid>
         <!-- Panel Izquierdo: Buscador y Tabla -->
         <MudItem xs="12" md="8">
             <MudPaper Elevation="3" Class="pa-4 mb-4 rounded-lg">
-                <!-- Buscador Dinámico NATIVO de MudBlazor (Sin advertencias MUD0002) -->
                 <MudTextField @bind-Value="textoBusqueda" 
                               @bind-Value:after="BuscarProducto"
                               Label="Buscar platillo por nombre..." 
@@ -29,25 +42,24 @@
                               Immediate="true"
                               Class="mb-4" />
 
-                <!-- Tabla de Resultados con navegación por teclado -->
                 <div tabindex="0" @onkeydown="Navegar" style="outline: none;">
-                    <MudTable Items="@productos" Hover="true" Dense="true" Elevation="0" Class="rounded-lg">
+                    <MudTable Items="@productos" Hover="true" Dense="true" Elevation="0" 
+                              OnRowClick="SeleccionarFila" T="Producto">
                         <HeaderContent>
-                            <MudTh>ID</MudTh>
-                            <MudTh>Nombre</MudTh>
+                            <MudTh>Plato / Especialidad</MudTh>
+                            <MudTh>Categoría</MudTh>
                             <MudTh>Precio</MudTh>
                             <MudTh>Estado</MudTh>
                         </HeaderContent>
                         <RowTemplate>
-                            @{
-                                var isSelected = (productos.IndexOf(context) == indiceSeleccionado);
-                                var rowClass = isSelected ? "mud-theme-primary mud-elevation-2" : "";
-                            }
-                            <MudTr id="@($"fila-{productos.IndexOf(context)}")" Class="@rowClass"
-                                   @onclick="() => SeleccionarProducto(context)" Style="cursor: pointer;">
-                                <MudTd DataLabel="ID">@context.Id</MudTd>
-                                <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
-                                <MudTd DataLabel="Precio">Bs. @context.Precio</MudTd>
+                            <MudTr id="@($"fila-{productos.IndexOf(context)}")"
+                                   Class="@(productoSeleccionado?.Id == context.Id ? "mud-table-row-selected" : "")"
+                                   Style="cursor: pointer;">
+                                <MudTd DataLabel="Plato"><b>@context.Nombre</b></MudTd>
+                                <MudTd DataLabel="Categoría">
+                                    <MudChip T="string" Size="Size.Small">@(context.Categoria?.Nombre ?? "Menú")</MudChip>
+                                </MudTd>
+                                <MudTd DataLabel="Precio">Bs. @context.Precio.ToString("N2")</MudTd>
                                 <MudTd DataLabel="Estado">
                                     <MudChip T="string" Color="@(context.Disponible == true ? Color.Success : Color.Error)"
                                              Size="Size.Small" Text="@(context.Disponible == true ? "Disponible" : "Agotado")" />
@@ -59,35 +71,70 @@
             </MudPaper>
         </MudItem>
 
-        <!-- Panel Derecho: Detalle (Fijo al hacer Scroll) -->
+        <!-- Panel Derecho: Detalle / Edición -->
         <MudItem xs="12" md="4">
             <div style="position: sticky; top: 80px;">
-                @if (productoSeleccionado != null)
+                @if (_enEdicion && _productoEditando != null)
+                {
+                    <MudCard Elevation="4" Class="pa-4 rounded-lg" Style="border: 2px solid #8B0000;">
+                        <MudText Typo="Typo.h6" Class="mb-3 font-weight-bold" Style="color: #8B0000;">
+                            @(_productoEditando.Id == 0 ? "Nuevo Producto" : "Editar Producto")
+                        </MudText>
+                        
+                        <MudTextField @bind-Value="_productoEditando.Nombre" Label="Nombre" Variant="Variant.Outlined" Class="mb-2" />
+                        <MudSelect T="int" @bind-Value="_productoEditando.CategoriaId" Label="Categoría" Variant="Variant.Outlined" Class="mb-2">
+                            @foreach (var c in categorias)
+                            {
+                                <MudSelectItem T="int" Value="@c.Id">@c.Nombre</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudNumericField @bind-Value="_productoEditando.Precio" Label="Precio (Bs.)" Variant="Variant.Outlined" Class="mb-2" Min="0m" />
+                        <MudTextField @bind-Value="_productoEditando.ImagenUrl" Label="URL Imagen" Variant="Variant.Outlined" Class="mb-2" />
+                        <MudTextField @bind-Value="_productoEditando.Descripcion" Label="Descripción" Variant="Variant.Outlined" Lines="3" Class="mb-3" />
+                        <MudCheckBox T="bool?" @bind-Value="_productoEditando.Disponible" Label="Disponible en carta" Color="Color.Primary" Class="mb-3" />
+
+                        <div class="d-flex justify-end gap-2">
+                            <MudButton Variant="Variant.Outlined" OnClick="CancelarEdicion">Cancelar</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="sabor-bg-burgundy" OnClick="GuardarProducto">
+                                Guardar
+                            </MudButton>
+                        </div>
+                    </MudCard>
+                }
+                else if (productoSeleccionado != null)
                 {
                     <MudCard Elevation="4" Class="rounded-lg">
-                        <MudCardMedia Image="@productoSeleccionado.ImagenUrl" Height="200" />
+                        <MudCardMedia Image="@(productoSeleccionado.ImagenUrl ?? "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80")" Height="200" />
                         <MudCardHeader>
                             <CardHeaderContent>
                                 <MudText Typo="Typo.h6">@productoSeleccionado.Nombre</MudText>
-                                <MudText Typo="Typo.body2" Color="Color.Secondary">Bs. @productoSeleccionado.Precio</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Primary" Class="font-weight-bold">
+                                    Bs. @productoSeleccionado.Precio.ToString("N2")
+                                </MudText>
                             </CardHeaderContent>
                         </MudCardHeader>
                         <MudCardContent>
                             <MudText Typo="Typo.body2">@productoSeleccionado.Descripcion</MudText>
                         </MudCardContent>
-                        <MudCardActions>
-                            <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">
-                                Editar
-                            </MudButton>
-                            <MudButton Variant="Variant.Text" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">
-                                Eliminar
-                            </MudButton>
+                        <MudCardActions Class="d-flex justify-space-between">
+                            <div>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit"
+                                           OnClick="EditarProducto">
+                                    Editar
+                                </MudButton>
+                                <MudButton Variant="Variant.Text" 
+                                           Color="@(productoSeleccionado.Disponible == true ? Color.Error : Color.Success)" 
+                                           StartIcon="@Icons.Material.Filled.Visibility"
+                                           OnClick="ToggleDisponibilidad">
+                                    @(productoSeleccionado.Disponible == true ? "Agotar" : "Habilitar")
+                                </MudButton>
+                            </div>
                         </MudCardActions>
                     </MudCard>
                 }
                 else
                 {
-                    <MudAlert Severity="Severity.Info">Seleccione un producto para ver el detalle.</MudAlert>
+                    <MudAlert Severity="Severity.Info">Seleccione un producto para ver o editar el detalle.</MudAlert>
                 }
             </div>
         </MudItem>
@@ -96,71 +143,141 @@
 
 @code {
     private List<Producto> productos = new();
+    private List<Categoria> categorias = new();
     private Producto? productoSeleccionado;
     private int indiceSeleccionado = 0;
     private string textoBusqueda = "";
 
+    private bool _enEdicion = false;
+    private Producto? _productoEditando;
+
     protected override async Task OnInitializedAsync()
     {
-        productos = await DbContext.Productos
-            .OrderBy(p => p.Nombre)
-            .Take(20)
-            .ToListAsync();
-
-        productoSeleccionado = productos.FirstOrDefault();
+        categorias = await ProductoService.GetCategoriasActivasAsync();
+        await CargarLista();
     }
 
-    private void SeleccionarProducto(Producto prod)
+    private async Task CargarLista()
     {
-        productoSeleccionado = prod;
-        indiceSeleccionado = productos.IndexOf(prod);
-    }
-
-    // Método de búsqueda simplificado
-    private async Task BuscarProducto()
-    {
+        productos = await ProductoService.GetProductosConCategoriaAsync();
         if (string.IsNullOrWhiteSpace(textoBusqueda))
         {
-            productos = await DbContext.Productos
-                .OrderBy(p => p.Nombre)
-                .Take(20)
-                .ToListAsync();
+            productoSeleccionado = productos.FirstOrDefault();
         }
         else
         {
-            // Búsqueda insensible a mayúsculas/minúsculas usando ILike
-            productos = await DbContext.Productos
-                .Where(p => p.Nombre != null && EF.Functions.ILike(p.Nombre, $"%{textoBusqueda}%"))
-                .OrderBy(p => p.Nombre)
-                .Take(20)
-                .ToListAsync();
+            productos = productos.Where(p => p.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase)).ToList();
+            productoSeleccionado = productos.FirstOrDefault();
+        }
+    }
+
+    private void SeleccionarFila(TableRowClickEventArgs<Producto> args)
+    {
+        if (args.Item != null)
+        {
+            productoSeleccionado = args.Item;
+            indiceSeleccionado = Math.Max(0, productos.IndexOf(args.Item));
+        }
+        _enEdicion = false;
+    }
+
+    private void NuevoProducto()
+    {
+        _productoEditando = new Producto
+        {
+            Disponible = true,
+            CategoriaId = categorias.FirstOrDefault()?.Id ?? 1
+        };
+        _enEdicion = true;
+    }
+
+    private void EditarProducto()
+    {
+        if (productoSeleccionado == null) return;
+        _productoEditando = new Producto
+        {
+            Id = productoSeleccionado.Id,
+            Nombre = productoSeleccionado.Nombre,
+            Descripcion = productoSeleccionado.Descripcion,
+            Precio = productoSeleccionado.Precio,
+            ImagenUrl = productoSeleccionado.ImagenUrl,
+            Disponible = productoSeleccionado.Disponible,
+            CategoriaId = productoSeleccionado.CategoriaId
+        };
+        _enEdicion = true;
+    }
+
+    private void CancelarEdicion()
+    {
+        _enEdicion = false;
+        _productoEditando = null;
+    }
+
+    private async Task GuardarProducto()
+    {
+        if (_productoEditando == null || string.IsNullOrWhiteSpace(_productoEditando.Nombre))
+        {
+            Snackbar.Add("Ingrese un nombre válido para el producto.", Severity.Warning);
+            return;
         }
 
-        indiceSeleccionado = 0;
-        productoSeleccionado = productos.FirstOrDefault();
+        bool exito;
+        if (_productoEditando.Id == 0)
+        {
+            exito = await ProductoService.CrearProductoAsync(_productoEditando);
+        }
+        else
+        {
+            exito = await ProductoService.ActualizarProductoAsync(_productoEditando);
+        }
+
+        if (exito)
+        {
+            Snackbar.Add("¡Producto guardado correctamente!", Severity.Success);
+            _enEdicion = false;
+            await CargarLista();
+        }
+        else
+        {
+            Snackbar.Add("Error al guardar el producto.", Severity.Error);
+        }
+    }
+
+    private async Task ToggleDisponibilidad()
+    {
+        if (productoSeleccionado == null) return;
+        var exito = await ProductoService.ToggleDisponibilidadAsync(productoSeleccionado.Id);
+        if (exito)
+        {
+            Snackbar.Add("Estado de disponibilidad actualizado.", Severity.Info);
+            await CargarLista();
+        }
+    }
+
+    private async Task BuscarProducto()
+    {
+        await CargarLista();
     }
 
     private async Task Navegar(KeyboardEventArgs e)
     {
-        if (e.Key == "ArrowDown")
+        if (e.Key == "ArrowDown" && indiceSeleccionado < productos.Count - 1)
         {
-            if (indiceSeleccionado < productos.Count - 1)
-            {
-                indiceSeleccionado++;
-            }
+            indiceSeleccionado++;
         }
-        else if (e.Key == "ArrowUp")
+        else if (e.Key == "ArrowUp" && indiceSeleccionado > 0)
         {
-            if (indiceSeleccionado > 0)
-            {
-                indiceSeleccionado--;
-            }
+            indiceSeleccionado--;
         }
 
         if (productos.Any())
         {
             productoSeleccionado = productos[indiceSeleccionado];
-            await JS.InvokeVoidAsync("focusRow", $"fila-{indiceSeleccionado}");
+            try
+            {
+                await JS.InvokeVoidAsync("focusRow", $"fila-{indiceSeleccionado}");
+            }
+            catch { }
         }
     }
 }

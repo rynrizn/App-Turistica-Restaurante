@@ -1,4 +1,6 @@
 @page "/registro"
+@layout RestauranteTuristicoApp.Components.Layout.AuthLayout
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
 @using Microsoft.EntityFrameworkCore
 @using RestauranteTuristicoApp.Models
 @inject AppWebContext DbContext

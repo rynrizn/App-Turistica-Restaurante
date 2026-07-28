@@ -24,6 +24,14 @@ public class UsuarioService
             .ToListAsync();
     }
 
+    public async Task<Usuario?> GetUsuarioByIdAsync(int id)
+    {
+        using var context = _dbFactory.CreateDbContext();
+        return await context.Usuarios
+            .Include(u => u.Rol)
+            .FirstOrDefaultAsync(u => u.Id == id);
+    }
+
     // 2. Obtener lista de roles disponibles
     public async Task<List<Role>> GetRolesAsync()
     {

@@ -1,7 +1,10 @@
 @page "/"
+@using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Services
 @inject IDialogService DialogService
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+@inject ProductoService ProductoService
 
 <PageTitle>Sabor & Tradición | Menú & Cava Tarijeña</PageTitle>
 
@@ -97,10 +100,10 @@
         <MudItem xs="12" sm="6" md="4">
             <MudCard Class="sabor-card d-flex flex-column" Elevation="2" Style="height: 100%;">
                 <div class="sabor-image-container" style="position: relative; height: 220px;">
-                    <img src="@plato.ImagenUrl" alt="@plato.Nombre" style="width: 100%; height: 100%; object-fit: cover;" />
+                    <img src="@(plato.ImagenUrl ?? "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80")" alt="@plato.Nombre" style="width: 100%; height: 100%; object-fit: cover;" />
                     <div style="position: absolute; top: 12px; right: 12px;">
                         <MudChip T="string" Size="Size.Small" Class="sabor-chip-gold">
-                            @plato.Etiqueta
+                            @(plato.Categoria?.Nombre ?? "Especialidad")
                         </MudChip>
                     </div>
                 </div>
@@ -111,12 +114,12 @@
                             @plato.Nombre
                         </MudText>
                         <MudText Typo="Typo.h6" Style="color: var(--color-primary); font-weight: 700; white-space: nowrap;">
-                            Bs. @plato.Precio
+                            Bs. @plato.Precio.ToString("N2")
                         </MudText>
                     </div>
 
                     <MudText Typo="Typo.caption" Class="d-block mb-2 font-weight-bold" Style="color: var(--color-secondary); text-transform: uppercase;">
-                        <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Small" Class="mr-1" /> Maridaje: @plato.Maridaje
+                        <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Small" Class="mr-1" /> Maridaje: Vino Tannat / Moscatel Tarijeño
                     </MudText>
 
                     <MudText Typo="Typo.body2" Class="mud-text-secondary" Style="line-height: 1.5;">
@@ -131,7 +134,7 @@
                                StartIcon="@Icons.Material.Filled.AddShoppingCart"
                                OnClick="@(() => OnOrderDish(plato))"
                                Style="border-color: var(--color-primary); border-radius: 6px; font-weight: 600;">
-                        Seleccionar
+                        Reservar Mesa con este Plato
                     </MudButton>
                     <MudIconButton Icon="@Icons.Material.Filled.FavoriteBorder" 
                                    Color="Color.Default" 
@@ -158,14 +161,20 @@
     private string _searchTerm = "";
     private string _selectedCategory = "Todos";
 
-    private readonly List<string> _categorias = new()
+    private List<Producto> _platos = new();
+    private readonly List<string> _categorias = new() { "Todos" };
+
+    protected override async Task OnInitializedAsync()
     {
-        "Todos",
-        "Platos Tradicionales",
-        "Cortes & Parrilla",
-        "Cava & Vinos de Altura",
-        "Postres Coloniales"
-    };
+        _platos = await ProductoService.GetProductosDisponiblesAsync();
+        var catList = _platos
+            .Where(p => p.Categoria != null)
+            .Select(p => p.Categoria.Nombre)
+            .Distinct()
+            .OrderBy(c => c)
+            .ToList();
+        _categorias.AddRange(catList);
+    }
 
     private void SetCategory(string categoria)
     {
@@ -174,97 +183,24 @@
 
     private void ScrollToMenu()
     {
-        // Simular salto o notificación de exploración
-        Snackbar.Add("Explorando menú culinario de Sabor & Tradición", Severity.Normal);
+        Navigation.NavigateTo("/#seccion-menu");
     }
 
-    private void OnOrderDish(PlatoMenu plato)
+    private void OnOrderDish(Producto plato)
     {
-        Snackbar.Add($"Añadido: {plato.Nombre} (Bs. {plato.Precio}) a su selección de mesa.", Severity.Success, config =>
-        {
-            config.ShowTransitionDuration = 200;
-            config.HideTransitionDuration = 400;
-            config.VisibleStateDuration = 3000;
-        });
+        Snackbar.Add($"Ha seleccionado: {plato.Nombre}. Puede incluirlo al hacer su reserva de mesa.", Severity.Success);
+        Navigation.NavigateTo("/reservas/nueva");
     }
 
-    private void OnLikeDish(PlatoMenu plato)
+    private void OnLikeDish(Producto plato)
     {
         Snackbar.Add($"¡Le gusta {plato.Nombre}! Guardado en sus favoritos.", Severity.Info);
     }
 
-    private IEnumerable<PlatoMenu> FilteredPlatos => _platos.Where(p =>
-        (_selectedCategory == "Todos" || p.Categoria == _selectedCategory) &&
+    private IEnumerable<Producto> FilteredPlatos => _platos.Where(p =>
+        (_selectedCategory == "Todos" || (p.Categoria?.Nombre ?? "") == _selectedCategory) &&
         (string.IsNullOrWhiteSpace(_searchTerm) ||
          p.Nombre.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase) ||
-         p.Descripcion.Contains(_searchTerm, StringComparison.OrdinalIgnoreCase))
-    );
-
-    private readonly List<PlatoMenu> _platos = new()
-    {
-        new PlatoMenu(
-            "Saice Chapaco Tradicional",
-            "Platos Tradicionales",
-            "Carne picada a cuchillo en guiso especiado con ají tarijeño, acompañado de arroz graneado, arvejas frescas y chuño rebosado.",
-            55,
-            "Tannat Reserva 2021",
-            "Especialidad de la Casa",
-            "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80"
-        ),
-        new PlatoMenu(
-            "Chancho a la Cruz del Valle",
-            "Cortes & Parrilla",
-            "Lechón tierno cocinado al calor de brasas de molle durante 8 horas, corte crujiente por fuera y jugoso con mote de maíz blanca.",
-            95,
-            "Syrah / Cabernet Sauvignon",
-            "Recomendado del Chef",
-            "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=800&q=80"
-        ),
-        new PlatoMenu(
-            "Ranga Ranga Tarijeña",
-            "Platos Tradicionales",
-            "Clásico caldo amarillo especiado de panza tierna con ají amarillo de San Lorenzo, papa harinosa y sarza fresca con cebolla.",
-            48,
-            "Vino Blanco Moscatel de Alejandría",
-            "Tradición Chapaca",
-            "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=800&q=80"
-        ),
-        new PlatoMenu(
-            "Bife de Chorizo al Tannat",
-            "Cortes & Parrilla",
-            "Corte premium de 400g madurado 21 días, glaseado con reducción de vino Tannat tarijeño y acompañado de vegetales asados.",
-            110,
-            "Gran Reserva Tannat 2019",
-            "Alta Gastronomía",
-            "https://images.unsplash.com/photo-1558030006-450675393462?auto=format&fit=crop&w=800&q=80"
-        ),
-        new PlatoMenu(
-            "Tannat Aranjuez Gran Reserva",
-            "Cava & Vinos de Altura",
-            "Botella de 750ml. Vino de altura (1,850m) premiado internacionalmente, con notas profundas a frutos negros, cacao y roble francés.",
-            180,
-            "Carnes Rojas y Quesos Madurados",
-            "Selección del Sommelier",
-            "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=800&q=80"
-        ),
-        new PlatoMenu(
-            "Aloja de Maní y Empanada Blanqueada",
-            "Postres Coloniales",
-            "Refrescante bebida ancestral de maní tostado y especias dulces, servida junto a la tradicional empanada con merengue de San Lorenzo.",
-            35,
-            "Vino Oporto o Singani",
-            "Dulce Colonial",
-            "https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=800&q=80"
-        )
-    };
-
-    private record PlatoMenu(
-        string Nombre,
-        string Categoria,
-        string Descripcion,
-        decimal Precio,
-        string Maridaje,
-        string Etiqueta,
-        string ImagenUrl
+         (p.Descripcion ?? "").Contains(_searchTerm, StringComparison.OrdinalIgnoreCase))
     );
 }

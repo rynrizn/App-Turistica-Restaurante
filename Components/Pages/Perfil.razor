@@ -1,242 +1,272 @@
 @page "/perfil"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Services
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
+@inject ReservaService ReservaService
+@inject UsuarioService UsuarioService
+@inject AuthenticationStateProvider AuthStateProvider
+@rendermode InteractiveServer
 
 <PageTitle>Mi Perfil & Historial | Sabor & Tradición</PageTitle>
 
-<!-- HEADER RESUMEN DEL USUARIO -->
-<MudCard Class="sabor-card pa-6 mb-6" Elevation="4" Style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
-    <MudGrid Class="align-center">
-        <MudItem xs="12" sm="3" md="2" Class="text-center">
-            <MudAvatar Color="Color.Secondary" Style="width: 86px; height: 86px; font-size: 2rem; font-weight: bold; background-color: #fed65b; color: #735c00; box-shadow: 0 8px 24px rgba(115, 92, 0, 0.2);">
-                RV
-            </MudAvatar>
-        </MudItem>
-        
-        <MudItem xs="12" sm="6" md="7">
-            <div class="d-flex align-center flex-wrap gap-2 mb-1">
-                <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
-                    Rodrigo Vargas
+@if (_cargando)
+{
+    <div class="text-center py-12">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Class="mt-3">Cargando su perfil...</MudText>
+    </div>
+}
+else if (_usuario == null)
+{
+    <MudAlert Severity="Severity.Error" Class="my-6">
+        No se pudo obtener la información de su usuario. Intente iniciar sesión nuevamente.
+    </MudAlert>
+}
+else
+{
+    <!-- HEADER RESUMEN DEL USUARIO -->
+    <MudCard Class="sabor-card pa-6 mb-6" Elevation="4" Style="background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);">
+        <MudGrid Class="align-center">
+            <MudItem xs="12" sm="3" md="2" Class="text-center">
+                <MudAvatar Color="Color.Secondary" Style="width: 86px; height: 86px; font-size: 2rem; font-weight: bold; background-color: #fed65b; color: #735c00; box-shadow: 0 8px 24px rgba(115, 92, 0, 0.2);">
+                    @GetIniciales(_usuario.Nombres, _usuario.Apellidos)
+                </MudAvatar>
+            </MudItem>
+            
+            <MudItem xs="12" sm="6" md="7">
+                <div class="d-flex align-center flex-wrap gap-2 mb-1">
+                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+                        @_usuario.Nombres @_usuario.Apellidos
+                    </MudText>
+                    <MudChip T="string" Size="Size.Small" Class="sabor-chip-gold">
+                        ★ @(_usuario.Rol?.Nombre?.ToUpper() ?? "CLIENTE") ORO
+                    </MudChip>
+                </div>
+                <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
+                    @_usuario.Email · Valle de la Concepción, Tarija
                 </MudText>
-                <MudChip T="string" Size="Size.Small" Class="sabor-chip-gold">
-                    ★ SOCIO ORO - CAVA TARIJEÑA
-                </MudChip>
-            </div>
-            <MudText Typo="Typo.body2" Class="mud-text-secondary mb-2">
-                Miembro desde Mayo 2024 · Valle de la Concepción, Tarija
-            </MudText>
-            <div class="d-flex flex-wrap gap-3">
-                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Icon="@Icons.Material.Filled.WineBar">
-                    Vino favorito: Tannat Reserva
-                </MudChip>
-                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" Icon="@Icons.Material.Filled.TableBar">
-                    Mesa favorita: Terraza Guadalquivir
-                </MudChip>
-            </div>
-        </MudItem>
+                <div class="d-flex flex-wrap gap-3">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" Icon="@Icons.Material.Filled.WineBar">
+                        Vino preferido: Tannat Reserva
+                    </MudChip>
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" Icon="@Icons.Material.Filled.TableBar">
+                        Reservas registradas: @_reservas.Count
+                    </MudChip>
+                </div>
+            </MudItem>
 
-        <MudItem xs="12" sm="3" md="3" Class="text-center text-md-right">
-            <div class="pa-3 rounded-lg" style="background: rgba(97, 0, 0, 0.05); border: 1px solid rgba(142, 112, 107, 0.2);">
-                <MudText Typo="Typo.caption" Style="color: #5a403c; text-transform: uppercase;">Puntos Sabor</MudText>
-                <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">1,420</MudText>
-                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="mt-1"
-                           OnClick="@(() => Snackbar.Add("Canje disponible: Botella de Moscatel o Cena para dos.", Severity.Info))">
-                    Canjear Puntos →
+            <MudItem xs="12" sm="3" md="3" Class="text-center text-md-right">
+                <div class="pa-3 rounded-lg" style="background: rgba(97, 0, 0, 0.05); border: 1px solid rgba(142, 112, 107, 0.2);">
+                    <MudText Typo="Typo.caption" Style="color: #5a403c; text-transform: uppercase;">Estado de Cuenta</MudText>
+                    <MudText Typo="Typo.h5" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">Activo</MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small" Class="mt-1"
+                               OnClick="@(() => Navigation.NavigateTo("mis-reservas"))">
+                        Ver reservas →
+                    </MudButton>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudCard>
+
+    <!-- PESTAÑAS DEL PERFIL -->
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Color="Color.Primary" Class="pa-2 pa-md-4">
+        
+        <!-- TAB 1: RESERVAS -->
+        <MudTabPanel Text="Mis Reservas" Icon="@Icons.Material.Filled.EventAvailable">
+            <div class="d-flex justify-space-between align-center my-4">
+                <MudText Typo="Typo.h5" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+                    Historial de Reservas
+                </MudText>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="@(() => Navigation.NavigateTo("reservas/nueva"))"
+                           Class="sabor-bg-burgundy" Style="border-radius: 8px; font-weight: 600;">
+                    NUEVA RESERVA
                 </MudButton>
             </div>
-        </MudItem>
-    </MudGrid>
-</MudCard>
 
-<!-- PESTAÑAS DEL PERFIL -->
-<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" Color="Color.Primary" Class="pa-2 pa-md-4">
-    
-    <!-- TAB 1: RESERVAS -->
-    <MudTabPanel Text="Mis Reservas" Icon="@Icons.Material.Filled.EventAvailable">
-        <div class="d-flex justify-space-between align-center my-4">
-            <MudText Typo="Typo.h5" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
-                Historial de Reservas
-            </MudText>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
-                       OnClick="@(() => Navigation.NavigateTo("reservas"))"
-                       Class="sabor-bg-burgundy" Style="border-radius: 8px; font-weight: 600;">
-                NUEVA RESERVA
-            </MudButton>
-        </div>
-
-        <MudGrid Spacing="3">
-            @foreach (var res in _reservas)
+            @if (!_reservas.Any())
             {
-                <MudItem xs="12" md="6">
-                    <MudCard Class="sabor-card pa-4" Elevation="2" Style="border-left: 4px solid #610000 !important;">
-                        <div class="d-flex justify-space-between align-start mb-2">
-                            <div>
-                                <MudText Typo="Typo.h6" Style="font-family: 'Playfair Display', serif; color: #191c1d; font-weight: 700;">
-                                    @res.Ambiente
-                                </MudText>
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">
-                                    Código: <b>@res.Codigo</b> · @res.Motivo
-                                </MudText>
-                            </div>
-                            <MudChip T="string" Size="Size.Small" Color="@GetChipColor(res.Estado)" Variant="Variant.Filled">
-                                @res.Estado
-                            </MudChip>
-                        </div>
-
-                        <MudDivider Class="my-2" />
-
-                        <div class="d-flex flex-wrap justify-space-between align-center my-2">
-                            <div>
-                                <MudText Typo="Typo.body2">
-                                    <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" Class="mr-1" />
-                                    <b>@res.Fecha</b> a las <b>@res.Hora</b>
-                                </MudText>
-                                <MudText Typo="Typo.body2">
-                                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="mr-1" />
-                                    @res.Comensales comensales
-                                </MudText>
-                            </div>
-                            @if (!string.IsNullOrEmpty(res.Maridaje))
-                            {
-                                <MudChip T="string" Size="Size.Small" Class="sabor-chip-gold">
-                                    <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Small" Class="mr-1" /> @res.Maridaje
-                                </MudChip>
-                            }
-                        </div>
-
-                        <MudCardActions Class="px-0 pb-0 pt-3 d-flex justify-end gap-2">
-                            @if (res.Estado == "CONFIRMADA")
-                            {
-                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
-                                           OnClick="@(() => CancelReserva(res))"
-                                           Style="border-radius: 6px;">
-                                    Cancelar
-                                </MudButton>
-                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="@(() => Snackbar.Add($"Modificando mesa para {res.Codigo}", Severity.Info))"
-                                           Style="border-radius: 6px;">
-                                    Modificar
-                                </MudButton>
-                            }
-                            else
-                            {
-                                <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
-                                           OnClick="@(() => Navigation.NavigateTo("reservas"))">
-                                    Reservar de nuevo →
-                                </MudButton>
-                            }
-                        </MudCardActions>
-                    </MudCard>
-                </MudItem>
+                <MudAlert Severity="Severity.Info" Class="my-4">No tiene reservaciones registradas.</MudAlert>
             }
-        </MudGrid>
-    </MudTabPanel>
+            else
+            {
+                <MudGrid Spacing="3">
+                    @foreach (var res in _reservas)
+                    {
+                        var mesaNum = res.ReservaMesas.FirstOrDefault()?.Mesa?.NumeroMesa.ToString() ?? "N/A";
+                        <MudItem xs="12" md="6">
+                            <MudCard Class="sabor-card pa-4" Elevation="2" Style="border-left: 4px solid #610000 !important;">
+                                <div class="d-flex justify-space-between align-start mb-2">
+                                    <div>
+                                        <MudText Typo="Typo.h6" Style="font-family: 'Playfair Display', serif; color: #191c1d; font-weight: 700;">
+                                            Mesa #@mesaNum
+                                        </MudText>
+                                        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                            Código: <b>@res.CodigoReserva</b>
+                                        </MudText>
+                                    </div>
+                                    <MudChip T="string" Size="Size.Small" Color="@GetChipColor(res.Estado)" Variant="Variant.Filled">
+                                        @res.Estado
+                                    </MudChip>
+                                </div>
 
-    <!-- TAB 2: DATOS Y PREFERENCIAS -->
-    <MudTabPanel Text="Configuración de Cuenta" Icon="@Icons.Material.Filled.Settings">
-        <div class="my-4">
-            <MudText Typo="Typo.h5" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
-                Datos Personales & Preferencias
-            </MudText>
-            <MudGrid Spacing="3">
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_nombre" Label="Nombre" Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_apellidos" Label="Apellidos" Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_email" Label="Correo Electrónico" Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12" sm="6">
-                    <MudTextField @bind-Value="_telefono" Label="Teléfono / WhatsApp" Variant="Variant.Outlined" />
-                </MudItem>
-                <MudItem xs="12">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="sabor-bg-burgundy px-6"
-                               OnClick="@(() => Snackbar.Add("Preferencias guardadas exitosamente.", Severity.Success))"
-                               Style="border-radius: 8px; font-weight: 600;">
-                        GUARDAR CAMBIOS
-                    </MudButton>
-                </MudItem>
-            </MudGrid>
-        </div>
-    </MudTabPanel>
+                                <MudDivider Class="my-2" />
 
-    <!-- TAB 3: FAVORITOS -->
-    <MudTabPanel Text="Mi Cava Favorita" Icon="@Icons.Material.Filled.Favorite">
-        <div class="my-4">
-            <MudText Typo="Typo.h5" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
-                Vinos & Especialidades Favoritas
-            </MudText>
-            <MudGrid Spacing="3">
-                <MudItem xs="12" sm="6" md="4">
-                    <MudCard Class="sabor-card pa-4 text-center">
-                        <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Large" Style="color: #610000;" />
-                        <MudText Typo="Typo.h6" Class="mt-2" Style="font-family: 'Playfair Display', serif; font-weight: 700;">
-                            Tannat Aranjuez 2019
-                        </MudText>
-                        <MudText Typo="Typo.caption" Class="mud-text-secondary">Gran Reserva · Tarija</MudText>
-                        <MudDivider Class="my-3" />
-                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" FullWidth="true"
-                                   OnClick="@(() => Navigation.NavigateTo("reservas"))">
-                            Reservar para mi Próxima Visita
+                                <div class="my-2">
+                                    <MudText Typo="Typo.body2" Class="mb-1">
+                                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" Class="mr-1" />
+                                        <b>@res.FechaReserva.ToString("dd/MM/yyyy")</b> a las <b>@res.HoraReserva.ToString("hh\\:mm")</b>
+                                    </MudText>
+                                    <MudText Typo="Typo.body2">
+                                        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="mr-1" />
+                                        @res.CantidadPersonas comensales
+                                    </MudText>
+                                </div>
+
+                                <MudCardActions Class="px-0 pb-0 pt-3 d-flex justify-end gap-2">
+                                    @if (res.Estado == "Pendiente" || res.Estado == "Confirmada")
+                                    {
+                                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                                                   OnClick="@(() => CancelarReserva(res))"
+                                                   Style="border-radius: 6px;">
+                                            Cancelar
+                                        </MudButton>
+                                    }
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+        </MudTabPanel>
+
+        <!-- TAB 2: DATOS Y PREFERENCIAS -->
+        <MudTabPanel Text="Configuración de Cuenta" Icon="@Icons.Material.Filled.Settings">
+            <div class="my-4">
+                <MudText Typo="Typo.h5" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+                    Datos Personales & Preferencias
+                </MudText>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_usuario.Nombres" Label="Nombre" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_usuario.Apellidos" Label="Apellidos" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_usuario.Email" Label="Correo Electrónico" Variant="Variant.Outlined" Disabled="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="_usuario.Telefono" Label="Teléfono / WhatsApp" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="sabor-bg-burgundy px-6"
+                                   OnClick="@(() => GuardarCambios())"
+                                   Style="border-radius: 8px; font-weight: 600;">
+                            GUARDAR CAMBIOS
                         </MudButton>
-                    </MudCard>
-                </MudItem>
-            </MudGrid>
-        </div>
-    </MudTabPanel>
+                    </MudItem>
+                </MudGrid>
+            </div>
+        </MudTabPanel>
 
-</MudTabs>
+        <!-- TAB 3: FAVORITOS -->
+        <MudTabPanel Text="Mi Cava Favorita" Icon="@Icons.Material.Filled.Favorite">
+            <div class="my-4">
+                <MudText Typo="Typo.h5" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+                    Vinos & Especialidades Favoritas
+                </MudText>
+                <MudGrid Spacing="3">
+                    <MudItem xs="12" sm="6" md="4">
+                        <MudCard Class="sabor-card pa-4 text-center">
+                            <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Large" Style="color: #610000;" />
+                            <MudText Typo="Typo.h6" Class="mt-2" Style="font-family: 'Playfair Display', serif; font-weight: 700;">
+                                Tannat Aranjuez 2019
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">Gran Reserva · Tarija</MudText>
+                            <MudDivider Class="my-3" />
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" FullWidth="true"
+                                       OnClick="@(() => Navigation.NavigateTo("reservas/nueva"))">
+                                Reservar para mi Próxima Visita
+                            </MudButton>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </div>
+        </MudTabPanel>
+
+    </MudTabs>
+}
 
 @code {
-    private string _nombre = "Rodrigo";
-    private string _apellidos = "Vargas";
-    private string _email = "rodrigo.vargas@tarija.bo";
-    private string _telefono = "+591 71829384";
+    private Usuario? _usuario;
+    private List<Reserva> _reservas = new();
+    private bool _cargando = true;
 
-    private void CancelReserva(ReservaItem res)
+    protected override async Task OnInitializedAsync()
     {
-        res.Estado = "CANCELADA";
-        Snackbar.Add($"Reserva {res.Codigo} ha sido cancelada.", Severity.Warning);
+        await CargarDatos();
+    }
+
+    private async Task CargarDatos()
+    {
+        _cargando = true;
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var idClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(idClaim, out int uid))
+        {
+            _usuario = await UsuarioService.GetUsuarioByIdAsync(uid);
+            _reservas = await ReservaService.GetReservasByUsuarioAsync(uid);
+        }
+        _cargando = false;
+    }
+
+    private async Task CancelarReserva(Reserva res)
+    {
+        if (_usuario == null) return;
+        var resCancel = await ReservaService.CancelarReservaAsync(res.Id, _usuario.Id);
+        if (resCancel.exito)
+        {
+            Snackbar.Add(resCancel.mensaje, Severity.Warning);
+            await CargarDatos();
+        }
+        else
+        {
+            Snackbar.Add(resCancel.mensaje, Severity.Error);
+        }
+    }
+
+    private async Task GuardarCambios()
+    {
+        if (_usuario == null) return;
+        var exito = await UsuarioService.ActualizarUsuarioAsync(_usuario);
+        if (exito)
+        {
+            Snackbar.Add("Datos de perfil actualizados exitosamente.", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Hubo un error al guardar los cambios.", Severity.Error);
+        }
+    }
+
+    private string GetIniciales(string nombres, string apellidos)
+    {
+        char n = !string.IsNullOrEmpty(nombres) ? nombres[0] : 'U';
+        char a = !string.IsNullOrEmpty(apellidos) ? apellidos[0] : 'S';
+        return $"{n}{a}".ToUpper();
     }
 
     private Color GetChipColor(string estado) => estado switch
     {
-        "CONFIRMADA" => Color.Success,
-        "COMPLETADA" => Color.Info,
-        "CANCELADA" => Color.Error,
+        "Confirmada" => Color.Success,
+        "Completada" => Color.Info,
+        "Cancelada" => Color.Error,
+        "Pendiente" => Color.Warning,
         _ => Color.Default
     };
-
-    private readonly List<ReservaItem> _reservas = new()
-    {
-        new ReservaItem("ST-2026-8942", "Terraza Guadalquivir", "29/07/2026", "20:00", 4, "CONFIRMADA", "Almuerzo Familiar", "Tannat Reserva"),
-        new ReservaItem("ST-2026-7310", "Salón Colonial", "15/06/2026", "19:30", 2, "COMPLETADA", "Aniversario", "Moscatel de Altura"),
-        new ReservaItem("ST-2026-5521", "Cava Subterránea VIP", "02/05/2026", "21:00", 6, "COMPLETADA", "Cena de Negocios", "Tannat Gran Reserva")
-    };
-
-    private class ReservaItem
-    {
-        public string Codigo { get; set; }
-        public string Ambiente { get; set; }
-        public string Fecha { get; set; }
-        public string Hora { get; set; }
-        public int Comensales { get; set; }
-        public string Estado { get; set; }
-        public string Motivo { get; set; }
-        public string Maridaje { get; set; }
-
-        public ReservaItem(string codigo, string ambiente, string fecha, string hora, int comensales, string estado, string motivo, string maridaje)
-        {
-            Codigo = codigo;
-            Ambiente = ambiente;
-            Fecha = fecha;
-            Hora = hora;
-            Comensales = comensales;
-            Estado = estado;
-            Motivo = motivo;
-            Maridaje = maridaje;
-        }
-    }
 }

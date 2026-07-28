@@ -1,0 +1,171 @@
+@page "/admin/dashboard"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrador")]
+@using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Services
+@inject ReporteService ReporteService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard Administrativo | Sabor & Tradición</PageTitle>
+
+<div class="mb-6">
+    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+        Dashboard Administrativo
+    </MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+        Métricas clave, rendimiento del restaurante y estadísticas operativas del mes.
+    </MudText>
+</div>
+
+@if (_cargando || _resumen == null)
+{
+    <div class="text-center py-12">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Class="mt-3">Calculando métricas y reportes...</MudText>
+    </div>
+}
+else
+{
+    <!-- TARJETAS DE MÉTRICAS -->
+    <MudGrid Spacing="3" Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="3" Class="pa-4 d-flex align-center justify-space-between" Style="border-left: 4px solid #610000;">
+                <div>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary text-uppercase">Reservas Hoy</MudText>
+                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #610000;">
+                        @_resumen.ReservasHoy
+                    </MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.Today" Color="Color.Primary" Size="Size.Large" />
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="3" Class="pa-4 d-flex align-center justify-space-between" Style="border-left: 4px solid #ff9800;">
+                <div>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary text-uppercase">Pendientes</MudText>
+                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #ff9800;">
+                        @_resumen.ReservasPendientes
+                    </MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.HourglassEmpty" Color="Color.Warning" Size="Size.Large" />
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="3" Class="pa-4 d-flex align-center justify-space-between" Style="border-left: 4px solid #4caf50;">
+                <div>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary text-uppercase">Completadas Mes</MudText>
+                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #2e7d32;">
+                        @_resumen.ReservasCompletadasMes
+                    </MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+            </MudCard>
+        </MudItem>
+
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard Elevation="3" Class="pa-4 d-flex align-center justify-space-between" Style="border-left: 4px solid #fed65b; background-color: #fffcf5;">
+                <div>
+                    <MudText Typo="Typo.caption" Class="mud-text-secondary text-uppercase">Total Facturado</MudText>
+                    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #735c00;">
+                        Bs. @_resumen.TotalFacturadoMes.ToString("N0")
+                    </MudText>
+                </div>
+                <MudIcon Icon="@Icons.Material.Filled.AttachMoney" Size="Size.Large" Style="color: #735c00;" />
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid Spacing="4">
+        <!-- TOP PLATILLOS -->
+        <MudItem xs="12" md="5">
+            <MudCard Class="sabor-card pa-4" Elevation="3">
+                <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+                    Top Platillos del Mes
+                </MudText>
+                @if (!_resumen.TopPlatillos.Any())
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Aún no hay comandas registradas.</MudText>
+                }
+                else
+                {
+                    <MudTable Items="@_resumen.TopPlatillos" Dense="true" Hover="true" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>Plato</MudTh>
+                            <MudTh>Categoría</MudTh>
+                            <MudTh>Total</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Plato"><b>@context.NombreProducto</b></MudTd>
+                            <MudTd DataLabel="Categoría">
+                                <MudChip T="string" Size="Size.Small">@context.Categoria</MudChip>
+                            </MudTd>
+                            <MudTd DataLabel="Total">@context.CantidadTotal uds</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudCard>
+        </MudItem>
+
+        <!-- ÚLTIMAS RESERVAS -->
+        <MudItem xs="12" md="7">
+            <MudCard Class="sabor-card pa-4" Elevation="3">
+                <div class="d-flex justify-space-between align-center mb-3">
+                    <MudText Typo="Typo.h6" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+                        Últimas Reservas Registradas
+                    </MudText>
+                    <MudButton Variant="Variant.Text" Color="Color.Primary" Size="Size.Small"
+                               OnClick="@(() => Navigation.NavigateTo("gestion/pedidos"))">
+                        Ver todas →
+                    </MudButton>
+                </div>
+
+                @if (!_resumen.UltimasReservas.Any())
+                {
+                    <MudText Typo="Typo.body2" Class="mud-text-secondary">Sin reservas.</MudText>
+                }
+                else
+                {
+                    <MudTable Items="@_resumen.UltimasReservas" Dense="true" Hover="true" Elevation="0">
+                        <HeaderContent>
+                            <MudTh>Código</MudTh>
+                            <MudTh>Cliente</MudTh>
+                            <MudTh>Fecha / Hora</MudTh>
+                            <MudTh>Estado</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd DataLabel="Código"><b>@context.CodigoReserva</b></MudTd>
+                            <MudTd DataLabel="Cliente">@(context.Usuario?.Nombres ?? "Cliente")</MudTd>
+                            <MudTd DataLabel="Fecha / Hora">@context.FechaReserva.ToString("dd/MM") — @context.HoraReserva.ToString("hh\\:mm")</MudTd>
+                            <MudTd DataLabel="Estado">
+                                <MudChip T="string" Size="Size.Small" Color="@GetChipColor(context.Estado)">@context.Estado</MudChip>
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    private ResumenDashboard? _resumen;
+    private bool _cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _cargando = true;
+        _resumen = await ReporteService.GetResumenDashboardAsync();
+        _cargando = false;
+    }
+
+    private Color GetChipColor(string estado) => estado switch
+    {
+        "Confirmada" => Color.Success,
+        "Completada" => Color.Info,
+        "Cancelada" => Color.Error,
+        "Pendiente" => Color.Warning,
+        _ => Color.Default
+    };
+}

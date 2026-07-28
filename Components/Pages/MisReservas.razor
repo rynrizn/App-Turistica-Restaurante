@@ -1,0 +1,158 @@
+@page "/mis-reservas"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Cliente")]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Services
+@inject ReservaService ReservaService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Mis Reservas | Sabor & Tradición</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+            Historial de Reservas
+        </MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            Consulte y gestione todas sus reservaciones de mesa y cava.
+        </MudText>
+    </div>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+               OnClick="@(() => Navigation.NavigateTo("reservas/nueva"))"
+               Class="sabor-bg-burgundy" Style="border-radius: 8px; font-weight: 600;">
+        NUEVA RESERVA
+    </MudButton>
+</div>
+
+@if (_cargando)
+{
+    <div class="text-center py-12">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Class="mt-3">Cargando sus reservas...</MudText>
+    </div>
+}
+else if (!_reservas.Any())
+{
+    <MudAlert Severity="Severity.Info" Class="my-6" Variant="Variant.Filled">
+        Aún no tiene reservas registradas. ¡Le invitamos a realizar su primera reservación en nuestra carta gastronómica!
+    </MudAlert>
+}
+else
+{
+    <MudGrid Spacing="3">
+        @foreach (var res in _reservas)
+        {
+            var mesaNum = res.ReservaMesas.FirstOrDefault()?.Mesa?.NumeroMesa.ToString() ?? "N/A";
+            <MudItem xs="12" md="6">
+                <MudCard Class="sabor-card pa-4" Elevation="2" Style="border-left: 4px solid #610000 !important;">
+                    <div class="d-flex justify-space-between align-start mb-2">
+                        <div>
+                            <MudText Typo="Typo.h6" Style="font-family: 'Playfair Display', serif; color: #191c1d; font-weight: 700;">
+                                Mesa #@mesaNum
+                            </MudText>
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                                Código: <b>@res.CodigoReserva</b>
+                            </MudText>
+                        </div>
+                        <MudChip T="string" Size="Size.Small" Color="@GetChipColor(res.Estado)" Variant="Variant.Filled">
+                            @res.Estado
+                        </MudChip>
+                    </div>
+
+                    <MudDivider Class="my-2" />
+
+                    <div class="my-2">
+                        <MudText Typo="Typo.body2" Class="mb-1">
+                            <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" Class="mr-1" />
+                            <b>@res.FechaReserva.ToString("dd/MM/yyyy")</b> a las <b>@res.HoraReserva.ToString("hh\\:mm")</b>
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mb-1">
+                            <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Small" Class="mr-1" />
+                            @res.CantidadPersonas comensales
+                        </MudText>
+                        @if (!string.IsNullOrWhiteSpace(res.Observaciones))
+                        {
+                            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block mt-2" Style="font-style: italic;">
+                                Note: @res.Observaciones
+                            </MudText>
+                        }
+                        @if (res.DetalleReservas.Any())
+                        {
+                            <div class="mt-2 pa-2 rounded" style="background-color: #fcf9f5; border: 1px dashed #e3beb8;">
+                                <MudText Typo="Typo.caption" Class="font-weight-bold" Style="color: #610000;">Pre-orden de Platillos:</MudText>
+                                @foreach (var det in res.DetalleReservas)
+                                {
+                                    <MudText Typo="Typo.caption" Class="d-block">
+                                        • @det.Cantidad x @det.Producto.Nombre (Bs. @((det.Cantidad * det.PrecioUnitario).ToString("N2")))
+                                    </MudText>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <MudCardActions Class="px-0 pb-0 pt-3 d-flex justify-end gap-2">
+                        @if (res.Estado == "Pendiente" || res.Estado == "Confirmada")
+                        {
+                            <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                                       OnClick="@(() => Cancelar(res))"
+                                       Style="border-radius: 6px;">
+                                Cancelar
+                            </MudButton>
+                        }
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private List<Reserva> _reservas = new();
+    private bool _cargando = true;
+    private int _userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarReservas();
+    }
+
+    private async Task CargarReservas()
+    {
+        _cargando = true;
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var idClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(idClaim, out int uid))
+        {
+            _userId = uid;
+            _reservas = await ReservaService.GetReservasByUsuarioAsync(_userId);
+        }
+        _cargando = false;
+    }
+
+    private async Task Cancelar(Reserva res)
+    {
+        var resultado = await ReservaService.CancelarReservaAsync(res.Id, _userId);
+        if (resultado.exito)
+        {
+            Snackbar.Add(resultado.mensaje, Severity.Warning);
+            await CargarReservas();
+        }
+        else
+        {
+            Snackbar.Add(resultado.mensaje, Severity.Error);
+        }
+    }
+
+    private Color GetChipColor(string estado) => estado switch
+    {
+        "Confirmada" => Color.Success,
+        "Completada" => Color.Info,
+        "Cancelada" => Color.Error,
+        "Pendiente" => Color.Warning,
+        _ => Color.Default
+    };
+}

@@ -1,0 +1,270 @@
+@page "/gestion/pedidos"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Empleado,Administrador")]
+@using Microsoft.EntityFrameworkCore
+@using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Services
+@inject ReservaService ReservaService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@rendermode InteractiveServer
+
+<PageTitle>Atención de Reservas y Pedidos | Sabor & Tradición</PageTitle>
+
+<div class="d-flex flex-wrap justify-space-between align-center mb-6">
+    <div>
+        <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+            Atención de Reservas & Comandas
+        </MudText>
+        <MudText Typo="Typo.body2" Class="mud-text-secondary">
+            Gestión operativa del salón, recepción de comensales y cobro de cuentas.
+        </MudText>
+    </div>
+
+    <div class="d-flex align-center gap-3">
+        <MudDatePicker Label="Filtrar por Fecha" @bind-Date="_fechaFiltro" 
+                       Variant="Variant.Outlined" DateFormat="dd/MM/yyyy"
+                       Clearable="true"
+                       Style="max-width: 220px;" />
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@(() => CargarReservas(false))"
+                   StartIcon="@Icons.Material.Filled.Refresh">
+            Filtrar
+        </MudButton>
+    </div>
+</div>
+
+@if (_cargando)
+{
+    <div class="text-center py-12">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+        <MudText Class="mt-3">Cargando comandas y reservas...</MudText>
+    </div>
+}
+else if (!_reservas.Any())
+{
+    <MudAlert Severity="Severity.Info" Class="my-6">
+        No se encontraron reservas para el criterio o fecha seleccionada.
+    </MudAlert>
+}
+else
+{
+    <MudGrid Spacing="3">
+        @foreach (var res in _reservas)
+        {
+            var mesaNum = res.ReservaMesas.FirstOrDefault()?.Mesa?.NumeroMesa.ToString() ?? "Sin Mesa";
+            var totalPedido = res.DetalleReservas.Sum(d => d.Cantidad * d.PrecioUnitario);
+            
+            <MudItem xs="12" md="6">
+                <MudCard Class="sabor-card pa-4" Elevation="3" Style="border-left: 5px solid #610000 !important;">
+                    <div class="d-flex justify-space-between align-start mb-2">
+                        <div>
+                            <div class="d-flex align-center gap-2">
+                                <MudText Typo="Typo.h6" Style="font-family: 'Playfair Display', serif; font-weight: 700; color: #191c1d;">
+                                    @res.CodigoReserva — Mesa #@mesaNum
+                                </MudText>
+                                <MudChip T="string" Size="Size.Small" Color="@GetChipColor(res.Estado)" Variant="Variant.Filled">
+                                    @res.Estado
+                                </MudChip>
+                            </div>
+                            <MudText Typo="Typo.body2" Class="mud-text-secondary">
+                                Cliente: <b>@(res.Usuario?.Nombres ?? "Cliente") @(res.Usuario?.Apellidos ?? "")</b>
+                            </MudText>
+                        </div>
+                        <MudText Typo="Typo.h6" Style="color: #610000; font-weight: 700;">
+                            Bs. @totalPedido.ToString("N2")
+                        </MudText>
+                    </div>
+
+                    <MudDivider Class="my-2" />
+
+                    <div class="my-2">
+                        <MudText Typo="Typo.body2">
+                            <MudIcon Icon="@Icons.Material.Filled.AccessTime" Size="Size.Small" Class="mr-1" />
+                            @res.FechaReserva.ToString("dd/MM/yyyy") a las @res.HoraReserva.ToString("hh\\:mm") — <b>@res.CantidadPersonas comensales</b>
+                        </MudText>
+
+                        @if (res.DetalleReservas.Any())
+                        {
+                            <div class="mt-3 pa-3 rounded-lg" style="background-color: #f8f9fa; border: 1px solid #e0e0e0;">
+                                <MudText Typo="Typo.caption" Class="font-weight-bold d-block mb-1" Style="color: #610000;">
+                                    Comanda / Pre-orden de Platos:
+                                </MudText>
+                                @foreach (var d in res.DetalleReservas)
+                                {
+                                    <div class="d-flex justify-space-between">
+                                        <MudText Typo="Typo.body2">@d.Cantidad x @d.Producto.Nombre</MudText>
+                                        <MudText Typo="Typo.body2" Class="font-weight-bold">Bs. @((d.Cantidad * d.PrecioUnitario).ToString("N2"))</MudText>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    <MudCardActions Class="px-0 pb-0 pt-3 d-flex flex-wrap justify-space-between align-center">
+                        <div class="d-flex gap-2">
+                            @if (res.Estado == "Pendiente")
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                           OnClick="@(() => CambiarEstado(res, "Confirmada"))">
+                                    Confirmar Llegada
+                                </MudButton>
+                            }
+                            @if (res.Estado == "Confirmada" || res.Estado == "Pendiente")
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Info" Size="Size.Small"
+                                           OnClick="@(() => CambiarEstado(res, "Completada"))">
+                                    Marcar Completada
+                                </MudButton>
+                            }
+                            @if (res.Estado != "Cancelada" && res.Estado != "Completada")
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                                           OnClick="@(() => CambiarEstado(res, "Cancelada"))">
+                                    Cancelar
+                                </MudButton>
+                            }
+                        </div>
+
+                        <!-- BOTÓN DE COBRO / PAGO -->
+                        @if (res.Estado == "Completada" || res.Estado == "Confirmada")
+                        {
+                            if (res.Factura == null || res.Factura.EstadoPago != "Pagado")
+                            {
+                                <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.AttachMoney"
+                                           OnClick="@(() => AbrirModalPago(res))"
+                                           Style="font-weight: 700;">
+                                    Cobrar / Pagar
+                                </MudButton>
+                            }
+                            else
+                            {
+                                <MudChip T="string" Color="Color.Success" Size="Size.Small" Icon="@Icons.Material.Filled.Check">
+                                    Pagado (@res.Factura.NumeroFactura)
+                                </MudChip>
+                            }
+                        }
+                    </MudCardActions>
+
+                    <!-- CUADRO DE PAGO INTEGRADO (SI SE HA DESPLEGADO PARA ESTA RESERVA) -->
+                    @if (_reservaEnCobro?.Id == res.Id)
+                    {
+                        <div class="mt-4 pa-4 rounded-lg" style="background-color: #fff9ed; border: 2px solid #fed65b;">
+                            <MudText Typo="Typo.subtitle1" Class="font-weight-bold mb-2" Style="color: #735c00;">
+                                Cuadro de Pago para @res.CodigoReserva
+                            </MudText>
+                            <MudGrid Spacing="2">
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.body2">Subtotal:</MudText>
+                                    <MudText Typo="Typo.h6" Class="font-weight-bold">Bs. @totalPedido.ToString("N2")</MudText>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudTextField @bind-Value="_descuentoCobro" Label="Descuento (Bs.)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                                </MudItem>
+                                <MudItem xs="12">
+                                    <MudSelect T="int" @bind-Value="_formaPagoSeleccionada" Label="Forma de Pago" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                        @foreach (var f in _formasPago)
+                                        {
+                                            <MudSelectItem Value="@f.Id">@f.Nombre</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="12" Class="d-flex justify-end gap-2 mt-2">
+                                    <MudButton Variant="Variant.Outlined" Color="Color.Default" Size="Size.Small"
+                                               OnClick="@(() => _reservaEnCobro = null)">
+                                        Cerrar
+                                    </MudButton>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Success" Size="Size.Small"
+                                               StartIcon="@Icons.Material.Filled.Payment"
+                                               Disabled="@_procesandoPago"
+                                               OnClick="@(() => CompletarPago(res))"
+                                               Style="font-weight: 700;">
+                                        @(_procesandoPago ? "Procesando..." : "COMPLETAR PAGO")
+                                    </MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </div>
+                    }
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private List<Reserva> _reservas = new();
+    private List<FormasPago> _formasPago = new();
+    private bool _cargando = true;
+    private DateTime? _fechaFiltro = DateTime.Today;
+    private Reserva? _reservaEnCobro = null;
+    private int _formaPagoSeleccionada = 1;
+    private decimal _descuentoCobro = 0m;
+    private bool _procesandoPago = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _formasPago = await ReservaService.GetFormasPagoAsync();
+        if (_formasPago.Any()) _formaPagoSeleccionada = _formasPago.First().Id;
+        await CargarReservas(false);
+    }
+
+    private async Task CargarReservas(bool limpiarFecha)
+    {
+        _cargando = true;
+        if (limpiarFecha) _fechaFiltro = null;
+        var fecha = _fechaFiltro.HasValue ? DateOnly.FromDateTime(_fechaFiltro.Value) : (DateOnly?)null;
+        _reservas = await ReservaService.GetTodasReservasAsync(fecha);
+        _cargando = false;
+    }
+
+    private async Task CambiarEstado(Reserva res, string nuevoEstado)
+    {
+        var exito = await ReservaService.ActualizarEstadoReservaAsync(res.Id, nuevoEstado, DateTime.Now, DateTime.Now);
+        if (exito)
+        {
+            res.Estado = nuevoEstado;
+            Snackbar.Add($"Reserva {res.CodigoReserva} actualizada a {nuevoEstado}", Severity.Success);
+        }
+    }
+
+    private void AbrirModalPago(Reserva res)
+    {
+        _reservaEnCobro = res;
+        _descuentoCobro = 0m;
+    }
+
+    private async Task CompletarPago(Reserva res)
+    {
+        _procesandoPago = true;
+        var factura = await ReservaService.GenerarFacturaAsync(res.Id, _formaPagoSeleccionada, _descuentoCobro);
+        if (factura != null)
+        {
+            var pagado = await ReservaService.CompletarPagoAsync(factura.Id);
+            if (pagado)
+            {
+                Snackbar.Add($"¡Pago completado! Factura {factura.NumeroFactura} registrada.", Severity.Success);
+                _reservaEnCobro = null;
+                await CargarReservas(false);
+            }
+        }
+        else if (res.Factura != null)
+        {
+            var pagado = await ReservaService.CompletarPagoAsync(res.Factura.Id);
+            if (pagado)
+            {
+                Snackbar.Add($"¡Pago completado sobre factura existente!", Severity.Success);
+                _reservaEnCobro = null;
+                await CargarReservas(false);
+            }
+        }
+        _procesandoPago = false;
+    }
+
+    private Color GetChipColor(string estado) => estado switch
+    {
+        "Confirmada" => Color.Success,
+        "Completada" => Color.Info,
+        "Cancelada" => Color.Error,
+        "Pendiente" => Color.Warning,
+        _ => Color.Default
+    };
+}

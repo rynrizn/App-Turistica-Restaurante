@@ -16,11 +16,13 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     public override Task<AuthenticationState> GetAuthenticationStateAsync()
         => Task.FromResult(new AuthenticationState(_currentUser));
 
-    public void MarkUserAsAuthenticated(string email, string rol)
+    public void MarkUserAsAuthenticated(int userId, string email, string nombreCompleto, string rol)
     {
         var identity = new ClaimsIdentity(new[]
         {
-            new Claim(ClaimTypes.Name, email),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.Email, email),
+            new Claim(ClaimTypes.Name, nombreCompleto),
             new Claim(ClaimTypes.Role, rol)
         }, "CustomAuth");
 

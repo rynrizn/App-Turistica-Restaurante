@@ -1,4 +1,6 @@
 @page "/login"
+@layout RestauranteTuristicoApp.Components.Layout.AuthLayout
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
 @using Microsoft.EntityFrameworkCore
 @using RestauranteTuristicoApp.Models
 @using RestauranteTuristicoApp.Services
@@ -62,12 +64,18 @@
             .Include(u => u.Rol)
             .FirstOrDefaultAsync(u => u.Email == email);
 
+        if (usuario != null && !usuario.Estado)
+        {
+            errorMessage = "Su cuenta se encuentra inactiva. Contacte con administración.";
+            return;
+        }
+
         if (usuario != null && BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
         {
             var customProvider = (CustomAuthStateProvider)AuthStateProvider;
             
             string nombreCompleto = $"{usuario.Nombres} {usuario.Apellidos}";
-            customProvider.MarkUserAsAuthenticated(nombreCompleto, usuario.Rol?.Nombre ?? "Cliente");
+            customProvider.MarkUserAsAuthenticated(usuario.Id, usuario.Email, nombreCompleto, usuario.Rol?.Nombre ?? "Cliente");
 
             Snackbar.Add($"¡Bienvenido {usuario.Nombres}!", Severity.Success);
             NavigationManager.NavigateTo("/");

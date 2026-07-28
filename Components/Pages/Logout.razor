@@ -1,0 +1,17 @@
+@page "/logout"
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+@using Microsoft.AspNetCore.Components.Authorization
+@using RestauranteTuristicoApp.Services
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (AuthStateProvider is CustomAuthStateProvider customAuth)
+        {
+            customAuth.MarkUserAsLoggedOut();
+        }
+        NavigationManager.NavigateTo("/login", true);
+    }
+}

@@ -25,20 +25,36 @@
             </MudButton>
         </MudHidden>
 
-        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
-            <ActivatorContent>
-                <MudAvatar Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Medium" Style="cursor: pointer; font-weight: bold; background-color: #fed65b; color: #735c00;">
-                    ST
-                </MudAvatar>
-            </ActivatorContent>
-            <ChildContent>
-                <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="perfil">Mi Perfil & Historial</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.EventAvailable" Href="reservas">Mis Reservas</MudMenuItem>
-                <MudDivider />
-                <MudMenuItem Icon="@Icons.Material.Filled.Login" Href="login">Iniciar Sesión</MudMenuItem>
-                <MudMenuItem Icon="@Icons.Material.Filled.PersonAdd" Href="registro">Crear Cuenta</MudMenuItem>
-            </ChildContent>
-        </MudMenu>
+        <AuthorizeView Context="authContext">
+            <Authorized>
+                <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <ActivatorContent Context="menuContext">
+                        <MudAvatar Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Medium" Style="cursor: pointer; font-weight: bold; background-color: #fed65b; color: #735c00;">
+                            ST
+                        </MudAvatar>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="perfil">Mi Perfil</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.EventAvailable" Href="mis-reservas">Mis Reservas</MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem Icon="@Icons.Material.Filled.Logout" Href="logout">Cerrar Sesión (@authContext.User.Identity?.Name)</MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            </Authorized>
+            <NotAuthorized>
+                <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <ActivatorContent Context="menuContext">
+                        <MudAvatar Color="Color.Default" Variant="Variant.Filled" Size="Size.Medium" Style="cursor: pointer;">
+                            <MudIcon Icon="@Icons.Material.Filled.PersonOutline" />
+                        </MudAvatar>
+                    </ActivatorContent>
+                    <ChildContent>
+                        <MudMenuItem Icon="@Icons.Material.Filled.Login" Href="login">Iniciar Sesión</MudMenuItem>
+                        <MudMenuItem Icon="@Icons.Material.Filled.PersonAdd" Href="registro">Crear Cuenta</MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            </NotAuthorized>
+        </AuthorizeView>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Variant="DrawerVariant.Responsive">
