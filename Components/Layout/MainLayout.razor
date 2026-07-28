@@ -1,22 +1,68 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
-<MudThemeProvider />
+<MudThemeProvider Theme="SaborTheme.DefaultTheme" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
-        <MudText Typo="Typo.h6">Restaurante Turístico</MudText>
+    <MudAppBar Elevation="2" Style="background: linear-gradient(135deg, #610000 0%, #8b0000 100%); color: white;">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@(() => ToggleDrawer())" />
+        
+        <MudIcon Icon="@Icons.Material.Filled.WineBar" Style="color: #fed65b;" Class="ml-2 mr-2" />
+        <MudText Typo="Typo.h6" Class="font-weight-bold" Style="font-family: 'Playfair Display', serif; color: white;">
+            Sabor & Tradición <span style="font-weight: 300; font-size: 0.85rem; color: #fed65b;">| TARIJA</span>
+        </MudText>
+
+        <MudSpacer />
+
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudButton Href="" Variant="Variant.Text" Style="color: white; font-weight: 500;" Class="mr-2">
+                Menú
+            </MudButton>
+            <MudButton Href="reservas" Variant="Variant.Outlined" Style="border-color: #fed65b; color: #fed65b; border-radius: 8px; font-weight: 600;" Class="mr-3" StartIcon="@Icons.Material.Filled.TableBar">
+                Reservar Mesa
+            </MudButton>
+        </MudHidden>
+
+        <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+            <ActivatorContent>
+                <MudAvatar Color="Color.Secondary" Variant="Variant.Filled" Size="Size.Medium" Style="cursor: pointer; font-weight: bold; background-color: #fed65b; color: #735c00;">
+                    ST
+                </MudAvatar>
+            </ActivatorContent>
+            <ChildContent>
+                <MudMenuItem Icon="@Icons.Material.Filled.Person" Href="perfil">Mi Perfil & Historial</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.EventAvailable" Href="reservas">Mis Reservas</MudMenuItem>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.Login" Href="login">Iniciar Sesión</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.PersonAdd" Href="registro">Crear Cuenta</MudMenuItem>
+            </ChildContent>
+        </MudMenu>
     </MudAppBar>
 
-    <MudMainContent Class="pa-4">
-        @Body
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always" Variant="DrawerVariant.Responsive">
+        <NavMenu />
+    </MudDrawer>
+
+    <MudMainContent Class="pa-4 pa-md-6" Style="background-color: var(--color-surface); min-height: 100vh;">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="py-2">
+            @Body
+        </MudContainer>
     </MudMainContent>
 </MudLayout>
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    Se ha producido un error inesperado.
+    <a href="." class="reload">Recargar</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}

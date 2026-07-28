@@ -1,0 +1,83 @@
+@page "/registro"
+@using Microsoft.EntityFrameworkCore
+@using RestauranteTuristicoApp.Models
+@inject AppWebContext DbContext
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-12">
+    <MudPaper Elevation="4" Class="pa-8 rounded-lg">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="font-weight-bold mb-4" Style="font-family: 'Playfair Display', serif; color: #8B0000;">
+            Crear Cuenta
+        </MudText>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@errorMessage</MudAlert>
+        }
+
+        <MudTextField @bind-Value="nombres" Label="Nombres *" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="apellidos" Label="Apellidos *" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="email" Label="Correo Electrónico *" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="telefono" Label="Teléfono / Celular" Variant="Variant.Outlined" Class="mb-3" />
+        <MudTextField @bind-Value="password" Label="Contraseña *" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-6" />
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Size="Size.Large" OnClick="ProcesarRegistro">
+            Registrarse
+        </MudButton>
+
+        <MudButton Variant="Variant.Text" Color="Color.Secondary" FullWidth="true" Class="mt-3" OnClick="IrALogin">
+            Ya tengo cuenta, iniciar sesión
+        </MudButton>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string nombres = string.Empty;
+    private string apellidos = string.Empty;
+    private string email = string.Empty;
+    private string telefono = string.Empty;
+    private string password = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private async Task ProcesarRegistro()
+    {
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(nombres) || string.IsNullOrWhiteSpace(apellidos) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Todos los campos obligatorios deben ser llenados.";
+            return;
+        }
+
+        var existe = await DbContext.Usuarios.AnyAsync(u => u.Email == email);
+        if (existe)
+        {
+            errorMessage = "El correo ya se encuentra registrado.";
+            return;
+        }
+
+        // Obtener el rol de Cliente por defecto
+        var rolCliente = await DbContext.Roles.FirstOrDefaultAsync(r => r.Nombre == "Cliente");
+
+        var nuevoUsuario = new Usuario
+        {
+            Nombres = nombres,
+            Apellidos = apellidos,
+            Email = email,
+            Telefono = telefono,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+            Estado = true,
+            RolId = rolCliente?.Id ?? 3
+        };
+
+        DbContext.Usuarios.Add(nuevoUsuario);
+        await DbContext.SaveChangesAsync();
+
+        Snackbar.Add("Cuenta registrada correctamente. Inicia sesión.", Severity.Success);
+        NavigationManager.NavigateTo("/login");
+    }
+
+    private void IrALogin() => NavigationManager.NavigateTo("/login");
+}

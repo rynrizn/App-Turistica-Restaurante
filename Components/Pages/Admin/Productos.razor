@@ -1,0 +1,166 @@
+@page "/admin/productos"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+
+@using Microsoft.EntityFrameworkCore
+@using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@inject AppWebContext DbContext
+@inject IJSRuntime JS
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudText Typo="Typo.h4" Class="mb-4 font-weight-bold" Style="color: #8B0000;">
+        Gestión del Menú (Buscador Maestro)
+    </MudText>
+    <MudDivider Class="mb-6" />
+
+    <MudGrid>
+        <!-- Panel Izquierdo: Buscador y Tabla -->
+        <MudItem xs="12" md="8">
+            <MudPaper Elevation="3" Class="pa-4 mb-4 rounded-lg">
+                <!-- Buscador Dinámico NATIVO de MudBlazor (Sin advertencias MUD0002) -->
+                <MudTextField @bind-Value="textoBusqueda" 
+                              @bind-Value:after="BuscarProducto"
+                              Label="Buscar platillo por nombre..." 
+                              Variant="Variant.Outlined"
+                              Adornment="Adornment.Start" 
+                              AdornmentIcon="@Icons.Material.Filled.Search" 
+                              Immediate="true"
+                              Class="mb-4" />
+
+                <!-- Tabla de Resultados con navegación por teclado -->
+                <div tabindex="0" @onkeydown="Navegar" style="outline: none;">
+                    <MudTable Items="@productos" Hover="true" Dense="true" Elevation="0" Class="rounded-lg">
+                        <HeaderContent>
+                            <MudTh>ID</MudTh>
+                            <MudTh>Nombre</MudTh>
+                            <MudTh>Precio</MudTh>
+                            <MudTh>Estado</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            @{
+                                var isSelected = (productos.IndexOf(context) == indiceSeleccionado);
+                                var rowClass = isSelected ? "mud-theme-primary mud-elevation-2" : "";
+                            }
+                            <MudTr id="@($"fila-{productos.IndexOf(context)}")" Class="@rowClass"
+                                   @onclick="() => SeleccionarProducto(context)" Style="cursor: pointer;">
+                                <MudTd DataLabel="ID">@context.Id</MudTd>
+                                <MudTd DataLabel="Nombre">@context.Nombre</MudTd>
+                                <MudTd DataLabel="Precio">Bs. @context.Precio</MudTd>
+                                <MudTd DataLabel="Estado">
+                                    <MudChip T="string" Color="@(context.Disponible == true ? Color.Success : Color.Error)"
+                                             Size="Size.Small" Text="@(context.Disponible == true ? "Disponible" : "Agotado")" />
+                                </MudTd>
+                            </MudTr>
+                        </RowTemplate>
+                    </MudTable>
+                </div>
+            </MudPaper>
+        </MudItem>
+
+        <!-- Panel Derecho: Detalle (Fijo al hacer Scroll) -->
+        <MudItem xs="12" md="4">
+            <div style="position: sticky; top: 80px;">
+                @if (productoSeleccionado != null)
+                {
+                    <MudCard Elevation="4" Class="rounded-lg">
+                        <MudCardMedia Image="@productoSeleccionado.ImagenUrl" Height="200" />
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">@productoSeleccionado.Nombre</MudText>
+                                <MudText Typo="Typo.body2" Color="Color.Secondary">Bs. @productoSeleccionado.Precio</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">@productoSeleccionado.Descripcion</MudText>
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Edit">
+                                Editar
+                            </MudButton>
+                            <MudButton Variant="Variant.Text" Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete">
+                                Eliminar
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info">Seleccione un producto para ver el detalle.</MudAlert>
+                }
+            </div>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private List<Producto> productos = new();
+    private Producto? productoSeleccionado;
+    private int indiceSeleccionado = 0;
+    private string textoBusqueda = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        productos = await DbContext.Productos
+            .OrderBy(p => p.Nombre)
+            .Take(20)
+            .ToListAsync();
+
+        productoSeleccionado = productos.FirstOrDefault();
+    }
+
+    private void SeleccionarProducto(Producto prod)
+    {
+        productoSeleccionado = prod;
+        indiceSeleccionado = productos.IndexOf(prod);
+    }
+
+    // Método de búsqueda simplificado
+    private async Task BuscarProducto()
+    {
+        if (string.IsNullOrWhiteSpace(textoBusqueda))
+        {
+            productos = await DbContext.Productos
+                .OrderBy(p => p.Nombre)
+                .Take(20)
+                .ToListAsync();
+        }
+        else
+        {
+            // Búsqueda insensible a mayúsculas/minúsculas usando ILike
+            productos = await DbContext.Productos
+                .Where(p => p.Nombre != null && EF.Functions.ILike(p.Nombre, $"%{textoBusqueda}%"))
+                .OrderBy(p => p.Nombre)
+                .Take(20)
+                .ToListAsync();
+        }
+
+        indiceSeleccionado = 0;
+        productoSeleccionado = productos.FirstOrDefault();
+    }
+
+    private async Task Navegar(KeyboardEventArgs e)
+    {
+        if (e.Key == "ArrowDown")
+        {
+            if (indiceSeleccionado < productos.Count - 1)
+            {
+                indiceSeleccionado++;
+            }
+        }
+        else if (e.Key == "ArrowUp")
+        {
+            if (indiceSeleccionado > 0)
+            {
+                indiceSeleccionado--;
+            }
+        }
+
+        if (productos.Any())
+        {
+            productoSeleccionado = productos[indiceSeleccionado];
+            await JS.InvokeVoidAsync("focusRow", $"fila-{indiceSeleccionado}");
+        }
+    }
+}

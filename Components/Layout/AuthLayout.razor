@@ -1,0 +1,25 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="SaborTheme.DefaultTheme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="sabor-auth-bg">
+    <div style="position: absolute; top: 24px; left: 24px; z-index: 10;">
+        <MudButton Href="" Variant="Variant.Filled" Color="Color.Surface" StartIcon="@Icons.Material.Filled.ArrowBack" 
+                   Style="border-radius: 8px; font-weight: 600;">
+            Volver a Sabor & Tradición
+        </MudButton>
+    </div>
+
+    <div style="width: 100%; display: flex; justify-content: center; align-items: center; padding: 24px 0;">
+        @Body
+    </div>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Se ha producido un error inesperado.
+    <a href="." class="reload">Recargar</a>
+    <span class="dismiss">🗙</span>
+</div>

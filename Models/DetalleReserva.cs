@@ -1,0 +1,21 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace RestauranteTuristicoApp.Models;
+
+public partial class DetalleReserva
+{
+    public int Id { get; set; }
+
+    public int ReservaId { get; set; }
+
+    public int ProductoId { get; set; }
+
+    public int Cantidad { get; set; }
+
+    public decimal PrecioUnitario { get; set; }
+
+    public virtual Producto Producto { get; set; } = null!;
+
+    public virtual Reserva Reserva { get; set; } = null!;
+}

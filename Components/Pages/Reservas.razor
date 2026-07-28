@@ -1,0 +1,259 @@
+@page "/reservas"
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Reservar Mesa | Sabor & Tradición</PageTitle>
+
+<div class="mb-6">
+    <MudText Typo="Typo.h4" Style="font-family: 'Playfair Display', serif; color: var(--color-primary); font-weight: 700;">
+        Reservación de Mesa & Cava
+    </MudText>
+    <MudText Typo="Typo.body2" Class="mud-text-secondary">
+        Personalice su experiencia culinaria en Tarija. Disponibilidad preferencial para socios de nuestro club.
+    </MudText>
+</div>
+
+<MudGrid Spacing="4">
+    <!-- COLUMNA DEL STEPPER / FORMULARIO -->
+    <MudItem xs="12" md="8">
+        <MudCard Class="sabor-card pa-4" Elevation="3">
+            <MudTabs @ref="_tabs" Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="pt-2" Color="Color.Primary" ActivePanelIndex="@_currentStep">
+                
+                <!-- PASO 1: FECHA Y HORA -->
+                <MudTabPanel Text="1. Fecha, Hora y Comensales" Icon="@Icons.Material.Filled.CalendarMonth" Disabled="@(_currentStep != 0)">
+                    <div class="pt-3">
+                        <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000;">
+                            ¿Cuándo nos visitará?
+                        </MudText>
+                        
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" sm="6">
+                                <MudDatePicker Label="Fecha de Reserva" @bind-Date="_selectedDate" Variant="Variant.Outlined" 
+                                               DateFormat="dd/MM/yyyy" Required="true" MinDate="DateTime.Today" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudTimePicker Label="Hora Estimada" @bind-Time="_selectedTime" Variant="Variant.Outlined" Required="true" />
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="int" @bind-Value="_numPersonas" Label="Número de Comensales" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                                    @for (int i = 1; i <= 12; i++)
+                                    {
+                                        int val = i;
+                                        <MudSelectItem Value="@val">@val @(val == 1 ? "Persona" : "Personas")</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudSelect T="string" @bind-Value="_motivoVisita" Label="Motivo / Celebración" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                                    <MudSelectItem Value="@("Almuerzo / Cena Familiar")" />
+                                    <MudSelectItem Value="@("Cata de Vinos / Maridaje")" />
+                                    <MudSelectItem Value="@("Cumpleaños o Aniversario")" />
+                                    <MudSelectItem Value="@("Cena de Negocios")" />
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
+
+                        <div class="d-flex justify-end mt-6">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="sabor-bg-burgundy px-6" 
+                                       OnClick="@(() => NextStep(1))" Style="border-radius: 8px; font-weight: 600;">
+                                Siguiente: Seleccionar Mesa →
+                            </MudButton>
+                        </div>
+                    </div>
+                </MudTabPanel>
+
+                <!-- PASO 2: AMBIENTE Y MESA -->
+                <MudTabPanel Text="2. Ambiente y Maridaje" Icon="@Icons.Material.Filled.TableBar" Disabled="@(_currentStep != 1)">
+                    <div class="pt-3">
+                        <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: #610000;">
+                            Elija su espacio favorito en el restaurante
+                        </MudText>
+
+                        <MudGrid Spacing="3">
+                            <MudItem xs="12" sm="4">
+                                <MudCard Elevation="@(_ambiente == "Terraza Guadalquivir" ? 6 : 1)" 
+                                         Class="pa-3 text-center cursor-pointer"
+                                         Style="@(_ambiente == "Terraza Guadalquivir" ? "border: 2px solid #610000; background: #fff8f8;" : "border: 1px solid #e0e0e0;")"
+                                         @onclick="@(() => SelectAmbiente("Terraza Guadalquivir"))">
+                                    <MudIcon Icon="@Icons.Material.Filled.WbSunny" Color="Color.Secondary" Size="Size.Large" Class="mb-1" />
+                                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold">Terraza Guadalquivir</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Vista al río y brisa del valle</MudText>
+                                </MudCard>
+                            </MudItem>
+
+                            <MudItem xs="12" sm="4">
+                                <MudCard Elevation="@(_ambiente == "Salón Colonial" ? 6 : 1)" 
+                                         Class="pa-3 text-center cursor-pointer"
+                                         Style="@(_ambiente == "Salón Colonial" ? "border: 2px solid #610000; background: #fff8f8;" : "border: 1px solid #e0e0e0;")"
+                                         @onclick="@(() => SelectAmbiente("Salón Colonial"))">
+                                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" Color="Color.Primary" Size="Size.Large" Class="mb-1" />
+                                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold">Salón Colonial</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Arquitectura histórica patrimonial</MudText>
+                                </MudCard>
+                            </MudItem>
+
+                            <MudItem xs="12" sm="4">
+                                <MudCard Elevation="@(_ambiente == "Cava Subterránea VIP" ? 6 : 1)" 
+                                         Class="pa-3 text-center cursor-pointer"
+                                         Style="@(_ambiente == "Cava Subterránea VIP" ? "border: 2px solid #610000; background: #fff8f8;" : "border: 1px solid #e0e0e0;")"
+                                         @onclick="@(() => SelectAmbiente("Cava Subterránea VIP"))">
+                                    <MudIcon Icon="@Icons.Material.Filled.WineBar" Color="Color.Secondary" Size="Size.Large" Class="mb-1" />
+                                    <MudText Typo="Typo.subtitle1" Class="font-weight-bold">Cava Subterránea VIP</MudText>
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary">Maridaje exclusivo con sommelier</MudText>
+                                </MudCard>
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_notasEspeciales" 
+                                              Label="Notas Especiales / Alergias Alimentarias" 
+                                              Variant="Variant.Outlined" 
+                                              Lines="2" 
+                                              Placeholder="Ej: Aniversario especial, una persona celíaca, mesa con buena iluminación..." />
+                            </MudItem>
+                        </MudGrid>
+
+                        <div class="d-flex justify-space-between mt-6">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="@(() => NextStep(0))">
+                                ← Volver
+                            </MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="sabor-bg-burgundy px-6" 
+                                       OnClick="@(() => NextStep(2))" Style="border-radius: 8px; font-weight: 600;">
+                                Confirmar Datos de Mesa →
+                            </MudButton>
+                        </div>
+                    </div>
+                </MudTabPanel>
+
+                <!-- PASO 3: CONFIRMACIÓN Y COMPROBANTE -->
+                <MudTabPanel Text="3. Confirmación" Icon="@Icons.Material.Filled.CheckCircle" Disabled="@(_currentStep != 2)">
+                    <div class="text-center py-6">
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircleOutline" Size="Size.Large" Style="color: #735c00; font-size: 4rem;" Class="mb-2" />
+                        <MudText Typo="Typo.h5" Style="font-family: 'Playfair Display', serif; color: #610000; font-weight: 700;">
+                            ¡Su Mesa Está Reservada!
+                        </MudText>
+                        <MudText Typo="Typo.body2" Class="mud-text-secondary mb-6">
+                            Hemos registrado su reservación. Recibirá un mensaje de confirmación por WhatsApp en Tarija.
+                        </MudText>
+
+                        <div class="pa-4 rounded-lg mx-auto mb-6 text-left" style="background-color: #f8f9fa; border: 1px solid #e3beb8; max-width: 420px;">
+                            <div class="d-flex justify-space-between mb-2">
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">CÓDIGO RESERVA:</MudText>
+                                <MudText Typo="Typo.subtitle2" Class="font-weight-bold" Style="color: #610000;">ST-2026-8942</MudText>
+                            </div>
+                            <MudDivider Class="my-2" />
+                            <MudGrid Spacing="1">
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">FECHA:</MudText>
+                                    <MudText Typo="Typo.body2" Class="font-weight-bold">@_selectedDate?.ToString("dd/MM/yyyy")</MudText>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">HORA:</MudText>
+                                    <MudText Typo="Typo.body2" Class="font-weight-bold">@_selectedTime?.ToString("hh\\:mm") hrs</MudText>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">COMENSALES:</MudText>
+                                    <MudText Typo="Typo.body2" Class="font-weight-bold">@_numPersonas Personas</MudText>
+                                </MudItem>
+                                <MudItem xs="6">
+                                    <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">AMBIENTE:</MudText>
+                                    <MudText Typo="Typo.body2" Class="font-weight-bold">@_ambiente</MudText>
+                                </MudItem>
+                            </MudGrid>
+                        </div>
+
+                        <div class="d-flex justify-center gap-3">
+                            <MudButton Variant="Variant.Filled" Color="Color.Secondary" 
+                                       StartIcon="@Icons.Material.Filled.Download"
+                                       OnClick="DownloadTicket"
+                                       Style="background-color: #fed65b; color: #735c00; font-weight: 700; border-radius: 8px;">
+                                DESCARGAR COMPROBANTE
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" 
+                                       OnClick="@(() => Navigation.NavigateTo("perfil"))"
+                                       Style="border-color: #610000; border-radius: 8px; font-weight: 600;">
+                                VER EN MIS RESERVAS
+                            </MudButton>
+                        </div>
+                    </div>
+                </MudTabPanel>
+
+            </MudTabs>
+        </MudCard>
+    </MudItem>
+
+    <!-- COLUMNA RESUMEN / SOMMELIER -->
+    <MudItem xs="12" md="4">
+        <MudCard Class="sabor-card pa-4" Elevation="3">
+            <MudText Typo="Typo.h6" Class="mb-3" Style="font-family: 'Playfair Display', serif; color: var(--color-primary); font-weight: 700;">
+                Resumen de su Reserva
+            </MudText>
+            
+            <div class="pa-3 mb-4 rounded-lg" style="background-color: rgba(254, 214, 91, 0.12); border: 1px solid #fed65b;">
+                <MudText Typo="Typo.caption" Class="font-weight-bold d-block mb-1" Style="color: #735c00;">
+                    <MudIcon Icon="@Icons.Material.Filled.WineBar" Size="Size.Small" Class="mr-1" /> BENEFICIO SOCIO VIP
+                </MudText>
+                <MudText Typo="Typo.caption" Class="mud-text-secondary">
+                    Copa de cortesía de Tannat Aranjuez de bienvenida para usted y sus acompañantes.
+                </MudText>
+            </div>
+
+            <MudList T="string" ReadOnly="true" Dense="true" Class="pa-0">
+                <MudListItem Icon="@Icons.Material.Filled.CalendarToday" IconColor="Color.Primary">
+                    <MudText Typo="Typo.body2"><b>Fecha:</b> @_selectedDate?.ToString("dd/MM/yyyy")</MudText>
+                </MudListItem>
+                <MudListItem Icon="@Icons.Material.Filled.AccessTime" IconColor="Color.Primary">
+                    <MudText Typo="Typo.body2"><b>Hora:</b> @_selectedTime?.ToString("hh\\:mm")</MudText>
+                </MudListItem>
+                <MudListItem Icon="@Icons.Material.Filled.People" IconColor="Color.Primary">
+                    <MudText Typo="Typo.body2"><b>Personas:</b> @_numPersonas comensales</MudText>
+                </MudListItem>
+                <MudListItem Icon="@Icons.Material.Filled.TableBar" IconColor="Color.Secondary">
+                    <MudText Typo="Typo.body2"><b>Mesa:</b> @_ambiente</MudText>
+                </MudListItem>
+            </MudList>
+
+            <MudDivider Class="my-3" />
+
+            <MudText Typo="Typo.caption" Class="mud-text-secondary d-block">
+                ¿Desea agregar un vino especial listo en su mesa al llegar?
+            </MudText>
+            <MudButton Variant="Variant.Text" Color="Color.Primary" StartIcon="@Icons.Material.Filled.WineBar"
+                       OnClick="@(() => Navigation.NavigateTo(""))"
+                       Class="px-0 mt-1" Style="font-weight: 700;">
+                Añadir Botella de la Carta →
+            </MudButton>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private MudTabs? _tabs;
+    private int _currentStep = 0;
+
+    private DateTime? _selectedDate = DateTime.Today.AddDays(1);
+    private TimeSpan? _selectedTime = new TimeSpan(19, 30, 0);
+    private int _numPersonas = 4;
+    private string _motivoVisita = "Almuerzo / Cena Familiar";
+    private string _ambiente = "Terraza Guadalquivir";
+    private string _notasEspeciales = "";
+
+    private void NextStep(int stepIndex)
+    {
+        _currentStep = stepIndex;
+        if (stepIndex == 2)
+        {
+            Snackbar.Add("¡Reserva procesada con éxito! Su código es ST-2026-8942.", Severity.Success);
+        }
+    }
+
+    private void SelectAmbiente(string ambiente)
+    {
+        _ambiente = ambiente;
+        Snackbar.Add($"Ambiente seleccionado: {ambiente}", Severity.Info);
+    }
+
+    private void DownloadTicket()
+    {
+        Snackbar.Add("Comprobante ST-2026-8942 generado. Listo para presentar al host.", Severity.Success);
+    }
+}

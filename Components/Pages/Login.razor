@@ -1,0 +1,98 @@
+@page "/login"
+@using Microsoft.EntityFrameworkCore
+@using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Services
+@inject AppWebContext DbContext
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@rendermode InteractiveServer
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-12">
+    <MudPaper Elevation="4" Class="pa-8 rounded-lg">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="font-weight-bold mb-4" Style="font-family: 'Playfair Display', serif; color: #8B0000;">
+            Iniciar Sesión
+        </MudText>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4" Variant="Variant.Filled">@errorMessage</MudAlert>
+        }
+
+        <MudTextField @bind-Value="email" Label="Correo Electrónico" Variant="Variant.Outlined" 
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Email" Class="mb-4" />
+
+        <MudTextField @bind-Value="password" Label="Contraseña" InputType="InputType.Password" Variant="Variant.Outlined" 
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Lock" Class="mb-2" />
+
+        <!-- ENLACE ¿OLVIDASTE TU CONTRASEÑA? -->
+        <div class="d-flex justify-end mb-6">
+            <MudLink OnClick="AbrirModalRecuperacion" Color="Color.Primary" Typo="Typo.body2" Style="cursor: pointer; text-decoration: underline;">
+                ¿Olvidaste tu contraseña?
+            </MudLink>
+        </div>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" Size="Size.Large" OnClick="ProcesarLogin">
+            Ingresar
+        </MudButton>
+
+        <MudButton Variant="Variant.Text" Color="Color.Secondary" FullWidth="true" Class="mt-3" OnClick="IrARegistro">
+            ¿No tienes cuenta? Regístrate aquí
+        </MudButton>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private string email = string.Empty;
+    private string password = string.Empty;
+    private string errorMessage = string.Empty;
+
+    private async Task ProcesarLogin()
+    {
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Por favor, ingresa tu correo y contraseña.";
+            return;
+        }
+
+        var usuario = await DbContext.Usuarios
+            .Include(u => u.Rol)
+            .FirstOrDefaultAsync(u => u.Email == email);
+
+        if (usuario != null && BCrypt.Net.BCrypt.Verify(password, usuario.PasswordHash))
+        {
+            var customProvider = (CustomAuthStateProvider)AuthStateProvider;
+            
+            string nombreCompleto = $"{usuario.Nombres} {usuario.Apellidos}";
+            customProvider.MarkUserAsAuthenticated(nombreCompleto, usuario.Rol?.Nombre ?? "Cliente");
+
+            Snackbar.Add($"¡Bienvenido {usuario.Nombres}!", Severity.Success);
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            errorMessage = "Credenciales incorrectas.";
+        }
+    }
+
+    private void IrARegistro()
+    {
+        NavigationManager.NavigateTo("/registro");
+    }
+
+    private async Task AbrirModalRecuperacion()
+    {
+        var options = new DialogOptions 
+        { 
+            CloseOnEscapeKey = true, 
+            MaxWidth = MaxWidth.ExtraSmall, 
+            FullWidth = true,
+            CloseButton = true
+        };
+
+        await DialogService.ShowAsync<RecuperarPasswordDialog>("Recuperar Contraseña", options);
+    }
+}

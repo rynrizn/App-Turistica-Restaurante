@@ -1,0 +1,105 @@
+/* Sabor & Tradición Visual Identity CSS Overrides */
+:root {
+    --color-surface: #f8f9fa;
+    --color-surface-dim: #d9dadb;
+    --color-surface-container-lowest: #ffffff;
+    --color-surface-container-low: #f3f4f5;
+    --color-surface-container: #edeeef;
+    --color-on-surface: #191c1d;
+    --color-on-surface-variant: #5a403c;
+    --color-primary: #610000;
+    --color-primary-container: #8b0000;
+    --color-secondary: #735c00;
+    --color-secondary-container: #fed65b;
+    --color-outline: #8e706b;
+    --font-headline: 'Playfair Display', serif;
+    --font-body: 'Roboto Flex', sans-serif;
+}
+
+body {
+    font-family: var(--font-body);
+    background-color: var(--color-surface);
+    color: var(--color-on-surface);
+    margin: 0;
+    padding: 0;
+}
+
+/* Headings always use Playfair Display */
+h1, h2, h3, h4, h5, h6,
+.mud-typography-h1, .mud-typography-h2, .mud-typography-h3,
+.mud-typography-h4, .mud-typography-h5, .mud-typography-h6 {
+    font-family: var(--font-headline) !important;
+    font-weight: 700;
+}
+
+/* Glassmorphism / Luxury Cards subtle hover */
+.sabor-card {
+    border-radius: 12px !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+    background: var(--color-surface-container-lowest) !important;
+    border: 1px solid rgba(142, 112, 107, 0.15) !important;
+}
+
+.sabor-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(97, 0, 0, 0.12) !important;
+}
+
+/* Image zoom-in transition on hover */
+.sabor-image-container {
+    overflow: hidden;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}
+
+.sabor-image-container img {
+    transition: transform 0.5s ease;
+}
+
+.sabor-card:hover .sabor-image-container img {
+    transform: scale(1.06);
+}
+
+/* Gold Chip border and text */
+.sabor-chip-gold {
+    border: 1px solid var(--color-secondary) !important;
+    color: var(--color-secondary) !important;
+    background-color: rgba(254, 214, 91, 0.12) !important;
+    font-weight: 600 !important;
+}
+
+/* Deep Burgundy ripple/accent */
+.sabor-bg-burgundy {
+    background: linear-gradient(135deg, #610000 0%, #8b0000 100%) !important;
+    color: white !important;
+}
+
+.sabor-text-burgundy {
+    color: #610000 !important;
+}
+
+.sabor-text-gold {
+    color: #735c00 !important;
+}
+
+/* Custom background for Auth pages */
+.sabor-auth-bg {
+    background: linear-gradient(135deg, rgba(97, 0, 0, 0.92) 0%, rgba(25, 28, 29, 0.95) 100%),
+                url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+/* Glassmorphism auth card */
+.sabor-auth-card {
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(12px);
+    border-radius: 16px !important;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35) !important;
+    border: 1px solid rgba(227, 190, 184, 0.4) !important;
+    max-width: 460px;
+    width: 100%;
+}

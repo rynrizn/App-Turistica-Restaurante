@@ -1,0 +1,222 @@
+@page "/admin/usuarios"
+@attribute [Authorize(Roles = "Administrador")]
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+@using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Services
+@inject UsuarioService UsuarioService
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <div class="d-flex justify-content-between align-center mb-4">
+        <MudText Typo="Typo.h4" Class="font-weight-bold" Style="color: #8B0000;">
+            Gestión de Usuarios
+        </MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.PersonAdd" OnClick="PrepararNuevoUsuario">
+            Adicionar Usuario
+        </MudButton>
+    </div>
+
+    <!-- TABLA DE USUARIOS ACTIVOS -->
+    <MudPaper Elevation="3" Class="pa-4 rounded-lg">
+        @if (usuarios == null)
+        {
+            <div class="d-flex align-center justify-center pa-8">
+                <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+            </div>
+        }
+        else
+        {
+            <MudTable Items="@usuarios" Hover="true" Striped="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Nombres</MudTh>
+                    <MudTh>Apellidos</MudTh>
+                    <MudTh>Email</MudTh>
+                    <MudTh>Rol</MudTh>
+                    <MudTh>Acciones</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Nombres">@context.Nombres</MudTd>
+                    <MudTd DataLabel="Apellidos">@context.Apellidos</MudTd>
+                    <MudTd DataLabel="Email">@context.Email</MudTd>
+                    <MudTd DataLabel="Rol">
+                        <MudChip T="string" Color="Color.Info" Size="Size.Small">@(context.Rol?.Nombre ?? "Sin Rol")</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Acciones">
+                        <!-- Botones de Acción Interactivos[cite: 11] -->
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Primary" Size="Size.Small" OnClick="() => PrepararEdicion(context)" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" OnClick="() => EliminarLogico(context.Id)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+</MudContainer>
+
+<!-- FORMULARIO LATERAL (DRAWER) MULTIUSO (Nuevo / Edición) -->
+<MudDrawer @bind-Open="drawerAbierto" Anchor="Anchor.End" Elevation="5" Variant="@DrawerVariant.Temporary" Width="420px">
+    <MudDrawerHeader Class="border-bottom d-flex align-center justify-content-between pa-4">
+        <MudText Typo="Typo.h6" Class="font-weight-bold" Style="color: #8B0000;">
+            @(esEdicion ? "Modificar Empleado/Usuario" : "Nuevo Usuario")
+        </MudText>
+        <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="CerrarDrawer" />
+    </MudDrawerHeader>
+
+    <div class="pa-6">
+        <EditForm Model="@usuarioEnEdicion" OnValidSubmit="GuardarCambios">
+            <DataAnnotationsValidator />
+
+            @if (!string.IsNullOrEmpty(mensajeError))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@mensajeError</MudAlert>
+            }
+
+            <MudTextField @bind-Value="usuarioEnEdicion.Nombres" Label="Nombres *" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="usuarioEnEdicion.Apellidos" Label="Apellidos *" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="usuarioEnEdicion.Telefono" Label="Teléfono" Variant="Variant.Outlined" Class="mb-3" />
+            
+            @if (!esEdicion)
+            {
+                <!-- Email y Password solo se exigen al crear un usuario nuevo por seguridad -->
+                <MudTextField @bind-Value="usuarioEnEdicion.Email" Label="Correo Electrónico *" Variant="Variant.Outlined" Class="mb-3" />
+                <MudTextField @bind-Value="passwordInput" Label="Contraseña *" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-3" />
+            }
+
+            <MudSelect @bind-Value="usuarioEnEdicion.RolId" Label="Rol de Usuario *" Variant="Variant.Outlined" Class="mb-6">
+                @if (rolesList != null)
+                {
+                    @foreach (var rol in rolesList)
+                    {
+                        <MudSelectItem Value="@rol.Id">@rol.Nombre</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+
+            <div class="d-flex justify-end gap-2 mt-4">
+                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="CerrarDrawer">Cancelar</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Success" ButtonType="ButtonType.Submit" Disabled="guardando">
+                    @(guardando ? "Procesando..." : "Guardar Cambios")
+                </MudButton>
+            </div>
+        </EditForm>
+    </div>
+</MudDrawer>
+
+@code {
+    private List<Usuario>? usuarios;
+    private List<Role>? rolesList;
+    private Usuario usuarioEnEdicion = new();
+    private string passwordInput = string.Empty;
+    
+    private bool drawerAbierto = false;
+    private bool guardando = false;
+    private bool esEdicion = false;
+    private string mensajeError = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarActivos();
+    }
+
+    private async Task CargarActivos()
+    {
+        // Carga únicamente registros vigentes[cite: 11]
+        usuarios = await UsuarioService.GetUsuariosActivosAsync();
+        rolesList = await UsuarioService.GetRolesAsync();
+    }
+
+    private void PrepararNuevoUsuario()
+    {
+        usuarioEnEdicion = new Usuario();
+        passwordInput = string.Empty;
+        esEdicion = false;
+        mensajeError = string.Empty;
+        drawerAbierto = true;
+    }
+
+    private void PrepararEdicion(Usuario usuarioOriginal)
+    {
+        // Desacoplamiento: El clon evita que la tabla principal se modifique al escribir[cite: 11]
+        usuarioEnEdicion = usuarioOriginal.Clonar(); 
+        esEdicion = true;
+        mensajeError = string.Empty;
+        drawerAbierto = true;
+    }
+
+    private void CerrarDrawer()
+    {
+        // Al cancelar, el objeto original queda intacto gracias al clon[cite: 11]
+        drawerAbierto = false;
+    }
+
+    private async Task GuardarCambios()
+    {
+        mensajeError = string.Empty;
+        guardando = true;
+
+        try
+        {
+            if (esEdicion)
+            {
+                // Flujo de Actualización Segura[cite: 11]
+                bool actualizado = await UsuarioService.ActualizarUsuarioAsync(usuarioEnEdicion);
+                if (actualizado)
+                {
+                    Snackbar.Add("Datos actualizados correctamente.", Severity.Success);
+                    await CargarActivos();
+                    CerrarDrawer();
+                }
+            }
+            else
+            {
+                // Flujo de Inserción
+                if (string.IsNullOrWhiteSpace(usuarioEnEdicion.Email) || string.IsNullOrWhiteSpace(passwordInput))
+                {
+                    mensajeError = "Correo y contraseña son obligatorios al crear.";
+                    return;
+                }
+                
+                bool registrado = await UsuarioService.InsertUsuarioAsync(usuarioEnEdicion, passwordInput);
+                if (registrado)
+                {
+                    Snackbar.Add("Usuario guardado exitosamente.", Severity.Success);
+                    await CargarActivos();
+                    CerrarDrawer();
+                }
+                else
+                {
+                    mensajeError = "El correo ya está registrado.";
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            guardando = false;
+        }
+    }
+
+    private async Task EliminarLogico(int id)
+    {
+        bool? result = await DialogService.ShowMessageBoxAsync(
+            "Confirmar Acción", 
+            "¿Estás seguro de eliminar este usuario?", 
+            yesText: "Eliminar", cancelText: "Cancelar");
+
+        if (result == true)
+        {
+            // Ejecuta la baja lógica en base de datos[cite: 11]
+            bool completado = await UsuarioService.DarDeBajaAsync(id);
+            if (completado)
+            {
+                Snackbar.Add("Usuario dado de baja.", Severity.Info);
+                await CargarActivos(); // Refresca reactivamente[cite: 11]
+            }
+        }
+    }
+}

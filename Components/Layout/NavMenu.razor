@@ -1,107 +1,84 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
+@using RestauranteTuristicoApp.Models
+@using RestauranteTuristicoApp.Services
+@inject MenuService MenuService
+@inject ComponentScanner Scanner
 
 <MudNavMenu Class="pa-2" Rounded="true" Color="Color.Primary" Margin="Margin.Normal">
 
-    <!-- SECCIÓN PÚBLICA / INICIO -->
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">
-        Inicio
-    </MudNavLink>
-    
-    <MudNavLink Href="menu" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.RestaurantMenu">
-        Menú Gastronómico
-    </MudNavLink>
-
-    <!-- VISTAS DE PRUEBA (Bootstrap por defecto) -->
-    <MudNavGroup Title="Pruebas Técnicas" Icon="@Icons.Material.Filled.Science" Expanded="false">
-        <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AddCircleOutline">
-            Counter
-        </MudNavLink>
-        <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.WbSunny">
-            Weather
-        </MudNavLink>
-    </MudNavGroup>
+    @if (menuItems == null)
+    {
+        <!-- Indicador de carga mientras consulta la BD -->
+        <div class="d-flex align-center justify-center pa-4">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+            <MudText Class="ml-2" Typo="Typo.caption">Cargando menú...</MudText>
+        </div>
+    }
+    else
+    {
+        @foreach (var item in menuItems)
+        {
+            <!-- 1. Validación física con Reflection -->
+            @if (Scanner.ExisteComponente(item.NombreComponente))
+            {
+                <!-- 2. Validación de Autenticación / Roles -->
+                @if (string.IsNullOrEmpty(item.RolRequerido))
+                {
+                    <!-- Opción Pública (Visibles para todos) -->
+                    <MudNavLink Href="@item.Ruta" Match="NavLinkMatch.Prefix" Icon="@ObtenerIconoMaterial(item.Icono)">
+                        @item.NombrePantalla
+                    </MudNavLink>
+                }
+                else
+                {
+                    <!-- Opción Protegida por Rol -->
+                    <AuthorizeView Roles="@item.RolRequerido">
+                        <Authorized>
+                            <MudNavLink Href="@item.Ruta" Match="NavLinkMatch.Prefix" Icon="@ObtenerIconoMaterial(item.Icono)">
+                                @item.NombrePantalla
+                            </MudNavLink>
+                        </Authorized>
+                    </AuthorizeView>
+                }
+            }
+        }
+    }
 
     <MudDivider Class="my-3" />
 
-    <!-- VALIDACIÓN DE AUTENTICACIÓN -->
+    <!-- Botón Dinámico de Inicio/Cierre de Sesión -->
     <AuthorizeView>
-        <!-- CONTENIDO SI EL USUARIO ESTÁ AUTENTICADO -->
         <Authorized>
-            <!-- Menú del Cliente -->
-            <MudText Typo="Typo.caption" Class="px-4 mt-2 font-weight-bold" Style="color: var(--mud-palette-text-disabled); text-transform: uppercase;">
-                Mi Cuenta
-            </MudText>
-            
-            <MudNavLink Href="reservas/nueva" Icon="@Icons.Material.Filled.EventAvailable">
-                Reservar Mesa
-            </MudNavLink>
-            <MudNavLink Href="mis-reservas" Icon="@Icons.Material.Filled.BookmarkBorder">
-                Mis Reservas
-            </MudNavLink>
-
-            <!-- Menú para Rol: Empleado o Administrador -->
-            <AuthorizeView Roles="Empleado, Administrador" Context="staffContext">
-                <Authorized>
-                    <MudDivider Class="my-3" />
-                    <MudText Typo="Typo.caption" Class="px-4 mt-2 font-weight-bold" Style="color: var(--mud-palette-text-disabled); text-transform: uppercase;">
-                        Módulo Operativo
-                    </MudText>
-                    
-                    <MudNavGroup Title="Gestión Sala" Icon="@Icons.Material.Filled.TableBar" Expanded="false">
-                        <MudNavLink Href="gestion/mesas" Icon="@Icons.Material.Filled.TableRestaurant">
-                            Estado de Mesas
-                        </MudNavLink>
-                        <MudNavLink Href="gestion/pedidos" Icon="@Icons.Material.Filled.Receipt">
-                            Atender Pedidos
-                        </MudNavLink>
-                    </MudNavGroup>
-                </Authorized>
-            </AuthorizeView>
-
-            <!-- Menú Exclusivo para Rol: Administrador -->
-            <AuthorizeView Roles="Administrador" Context="adminContext">
-                <Authorized>
-                    <MudDivider Class="my-3" />
-                    <MudText Typo="Typo.caption" Class="px-4 mt-2 font-weight-bold" Style="color: var(--mud-palette-text-disabled); text-transform: uppercase;">
-                        Administración
-                    </MudText>
-
-                    <MudNavGroup Title="Panel Admin" Icon="@Icons.Material.Filled.AdminPanelSettings" Expanded="true">
-                        <MudNavLink Href="admin/dashboard" Icon="@Icons.Material.Filled.Dashboard">
-                            Dashboard y Reportes
-                        </MudNavLink>
-                        <MudNavLink Href="admin/productos" Icon="@Icons.Material.Filled.Fastfood">
-                            Gestionar Menú (CRUD)
-                        </MudNavLink>
-                        <MudNavLink Href="admin/usuarios" Icon="@Icons.Material.Filled.People">
-                            Gestionar Usuarios
-                        </MudNavLink>
-                    </MudNavGroup>
-                </Authorized>
-            </AuthorizeView>
-
-            <MudDivider Class="my-3" />
-            
-            <!-- Botón / Enlace para Cerrar Sesión -->
             <MudNavLink Href="logout" Icon="@Icons.Material.Filled.Logout" IconColor="Color.Error">
                 Cerrar Sesión
             </MudNavLink>
         </Authorized>
-
-        <!-- CONTENIDO SI EL USUARIO NO HA INICIADO SESIÓN (ANÓNIMO) -->
         <NotAuthorized>
-            <MudDivider Class="my-2" />
-            <MudText Typo="Typo.caption" Class="px-4 mt-2 font-weight-bold" Style="color: var(--mud-palette-text-disabled); text-transform: uppercase;">
-                Acceso
-            </MudText>
-
             <MudNavLink Href="login" Icon="@Icons.Material.Filled.Login" IconColor="Color.Primary">
                 Iniciar Sesión
-            </MudNavLink>
-            <MudNavLink Href="registro" Icon="@Icons.Material.Filled.PersonAdd">
-                Registrarse
             </MudNavLink>
         </NotAuthorized>
     </AuthorizeView>
 
 </MudNavMenu>
+
+@code {
+    private List<MenuItem>? menuItems;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Cargar menú desde PostgreSQL al iniciar el componente
+        menuItems = await MenuService.ObtenerMenuItemsAsync();
+    }
+
+    // Helper para mapear texto de icono de BD a íconos vectoriales de MudBlazor
+    private string ObtenerIconoMaterial(string iconoBD) => iconoBD switch
+    {
+        "Home" => Icons.Material.Filled.Home,
+        "Menu" => Icons.Material.Filled.RestaurantMenu,
+        "Cliente" => Icons.Material.Filled.EventAvailable,
+        "Empleado" => Icons.Material.Filled.TableBar,
+        "Administrador" => Icons.Material.Filled.AdminPanelSettings,
+        _ => Icons.Material.Filled.BookmarkBorder
+    };
+}
