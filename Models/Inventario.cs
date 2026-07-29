@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Representa la informacion de cada producto
+/// </summary>
 public partial class Inventario
 {
     public int Id { get; set; }

@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using RestauranteTuristicoApp.Models;
 
 namespace RestauranteTuristicoApp.Services;
-
+/// <summary>
+/// Gestiona las operaciones relacionadas con las reseñas.
+/// </summary>
 public class ResenaService
 {
     private readonly IDbContextFactory<AppWebContext> _dbFactory;

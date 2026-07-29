@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Representa la configuracion general del restaurante
+/// </summary>
 public partial class ConfiguracionRestaurante
 {
     public int Id { get; set; }

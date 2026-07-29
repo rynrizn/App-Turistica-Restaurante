@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Representa un elemento del menú de navegación
+/// </summary>
 public partial class MenuItem
 {
     public int Id { get; set; }

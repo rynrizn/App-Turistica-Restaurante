@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Clase categoria que nos sirve para clasificar los productos
+/// </summary>
 public partial class Categoria
 {
     public int Id { get; set; }

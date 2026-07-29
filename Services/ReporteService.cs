@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using RestauranteTuristicoApp.Models;
 
 namespace RestauranteTuristicoApp.Services;
-
+/// <summary>
+/// Contiene el resumen de información del panel principal.
+/// </summary>
 public class ResumenDashboard
 {
     public int ReservasHoy { get; set; }

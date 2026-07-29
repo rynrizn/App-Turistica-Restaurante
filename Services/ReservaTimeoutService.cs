@@ -8,6 +8,9 @@ using Microsoft.Extensions.Logging;
 using RestauranteTuristicoApp.Models;
 
 namespace RestauranteTuristicoApp.Services
+/// <summary>
+/// Supervisa y cancela automáticamente las reservas expiradas.
+/// </summary>
 {
     public class ReservaTimeoutService : BackgroundService
     {

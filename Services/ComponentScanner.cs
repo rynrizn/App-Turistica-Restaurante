@@ -2,7 +2,9 @@ using System.Reflection;
 using Microsoft.AspNetCore.Components;
 
 namespace RestauranteTuristicoApp.Services;
-
+/// <summary>
+/// Permite verificar si un componente existe en la aplicacion.
+/// </summary>
 public class ComponentScanner
 {
     private readonly Assembly _assembly;

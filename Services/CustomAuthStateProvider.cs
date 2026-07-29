@@ -2,7 +2,9 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace RestauranteTuristicoApp.Services;
-
+/// <summary>
+/// Administra el estado de autenticación de los usuarios.
+/// </summary>
 public class CustomAuthStateProvider : AuthenticationStateProvider
 {
     private readonly ClaimsPrincipal _anonymous = new(new ClaimsIdentity());

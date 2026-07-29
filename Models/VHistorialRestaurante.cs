@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Representa el historial de reservas, facturacion y consumo del restaurante.
+/// </summary>
 public partial class VHistorialRestaurante
 {
     public int? FacturaId { get; set; }

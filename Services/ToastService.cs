@@ -1,6 +1,9 @@
 using System;
 
 namespace RestauranteTuristicoApp.Services
+/// <summary>
+/// Representa un mensaje de notificación.
+/// </summary>
 {
     public class ToastMessage
     {

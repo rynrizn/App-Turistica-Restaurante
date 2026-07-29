@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Almacena informacion sobre cada mesa del restaurante
+/// </summary>
 public partial class Mesa
 {
     public int Id { get; set; }

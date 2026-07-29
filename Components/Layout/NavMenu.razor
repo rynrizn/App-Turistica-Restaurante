@@ -1,3 +1,9 @@
+@*
+    Componente que genera el menú de navegación dinámicamente
+    según los permisos y componentes disponibles.
+*@
+
+
 @using Microsoft.AspNetCore.Components.Authorization
 @using RestauranteTuristicoApp.Models
 @using RestauranteTuristicoApp.Services
@@ -49,12 +55,12 @@
 
 @code {
     private List<MenuItem>? menuItems;
-
+    @* Carga los elementos del menú al iniciar el componente. *@
     protected override async Task OnInitializedAsync()
     {
         menuItems = await MenuService.ObtenerMenuItemsAsync();
     }
-
+    @* Devuelve el icono de Bootstrap correspondiente al menú. *@
     private string ObtenerIconoBootstrap(string iconoBD) => iconoBD switch
     {
         "Home" => "bi-house-fill",
@@ -64,7 +70,7 @@
         "Administrador" => "bi-shield-lock-fill",
         _ => "bi-bookmark"
     };
-
+    @* Actualiza la interfaz al cerrar el menú lateral en dispositivos móviles. *@
     private async Task CerrarSidebarMovil()
     {
         await InvokeAsync(StateHasChanged);

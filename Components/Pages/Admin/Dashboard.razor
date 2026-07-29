@@ -1,3 +1,8 @@
+@*
+    Página del dashboard administrativo.
+    Muestra indicadores, estadísticas y reportes del restaurante.
+*@
+
 @page "/admin/dashboard"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = "Administrador,Empleado")]
 @using RestauranteTuristicoApp.Models
@@ -171,6 +176,7 @@ else
     private ResumenDashboard? _resumen;
     private bool _cargando = true;
 
+    @* Carga la información del dashboard al iniciar la página. *@
     protected override async Task OnInitializedAsync()
     {
         _cargando = true;
@@ -178,6 +184,7 @@ else
         _cargando = false;
     }
 
+     
     private string GetBadgeClass(string estado) => estado switch
     {
         "Confirmada" => "bg-success",

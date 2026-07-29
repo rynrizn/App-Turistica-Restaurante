@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Representa un rol asignable a los usuarios del sistema.
+/// </summary>
 public partial class Role
 {
     public int Id { get; set; }

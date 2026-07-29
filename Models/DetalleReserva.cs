@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+ /// <summary>
+/// Clase que nos sirve para almacenar los productos solicitados dentro de una reserva
+/// </summary>
 public partial class DetalleReserva
 {
     public int Id { get; set; }

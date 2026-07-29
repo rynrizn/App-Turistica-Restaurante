@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Representa la factura generada a partir de una reserva
+/// </summary>
 public partial class Factura
 {
     public int Id { get; set; }

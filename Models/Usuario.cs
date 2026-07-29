@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Representa un usuario registrado en el sistema.
+/// </summary>
 public partial class Usuario
 {
     public int Id { get; set; }

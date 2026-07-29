@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Representa una reserva realizada por un usuario en el restaurante
+/// </summary>
 public partial class Reserva
 {
     public int Id { get; set; }

@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+///  Representa una reseña realizada por un usuario sobre el restaurante
+/// </summary>
 public partial class Resena
 {
     public int Id { get; set; }

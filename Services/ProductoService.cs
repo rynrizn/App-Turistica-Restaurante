@@ -2,7 +2,9 @@ using Microsoft.EntityFrameworkCore;
 using RestauranteTuristicoApp.Models;
 
 namespace RestauranteTuristicoApp.Services;
-
+/// <summary>
+/// Gestiona las operaciones relacionadas con los productos.
+/// </summary>
 public class ProductoService
 {
     private readonly IDbContextFactory<AppWebContext> _dbFactory;

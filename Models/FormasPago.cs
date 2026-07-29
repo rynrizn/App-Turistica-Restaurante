@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
-
+/// <summary>
+/// Representa una forma o método de pago disponible en el sistema
+/// </summary>
 public partial class FormasPago
 {
     public int Id { get; set; }
