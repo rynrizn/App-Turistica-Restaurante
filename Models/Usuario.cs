@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace RestauranteTuristicoApp.Models;
@@ -23,15 +23,16 @@ public partial class Usuario
 
     public string Apellidos { get; set; } = null!;
 
+    public virtual ICollection<Resena> Resenas { get; set; } = new List<Resena>();
+
     public virtual ICollection<Reserva> Reservas { get; set; } = new List<Reserva>();
 
     public virtual Role Rol { get; set; } = null!;
-
-    public string NombreCompleto => $"{Nombres} {Apellidos}".Trim();
+    // Propiedad calculada para unir nombres y apellidos
+    public string NombreCompleto => $"{Nombres} {Apellidos}";
 
     public Usuario Clonar()
     {
-        // Realiza una copia superficial aislando el objeto del listado original
-        return (Usuario)this.MemberwiseClone(); 
+        return (Usuario)this.MemberwiseClone();
     }
 }

@@ -437,7 +437,7 @@ public partial class AppWebContext : DbContext
                 .HasDefaultValue(true)
                 .HasColumnName("estado");
 
-            entity.HasOne(d => d.Usuario).WithMany()
+            entity.HasOne(d => d.Usuario).WithMany(p => p.Resenas)
                 .HasForeignKey(d => d.UsuarioId)
                 .HasConstraintName("fk_resenas_usuario");
         });

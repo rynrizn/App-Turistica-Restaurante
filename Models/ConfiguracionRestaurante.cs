@@ -1,24 +1,15 @@
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System;
+using System.Collections.Generic;
 
-namespace RestauranteTuristicoApp.Models
+namespace RestauranteTuristicoApp.Models;
+
+public partial class ConfiguracionRestaurante
 {
-    [Table("configuracion_restaurante")]
-    public class ConfiguracionRestaurante
-    {
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
+    public int Id { get; set; }
 
-        [Required]
-        [Column("clave")]
-        public string Clave { get; set; } = string.Empty;
+    public string Clave { get; set; } = null!;
 
-        [Required]
-        [Column("valor")]
-        public string Valor { get; set; } = string.Empty;
+    public string Valor { get; set; } = null!;
 
-        [Column("descripcion")]
-        public string? Descripcion { get; set; }
-    }
+    public string? Descripcion { get; set; }
 }
