@@ -14,13 +14,13 @@ public class UsuarioService
         _dbFactory = dbFactory;
     }
 
-    // 1. Obtener listado de usuarios Activos (Filtro de Baja Lógica)[cite: 11]
+    // 1. Obtener listado de usuarios Activos (Filtro de Baja Lógica)
     public async Task<List<Usuario>> GetUsuariosActivosAsync()
     {
         using var context = _dbFactory.CreateDbContext();
         return await context.Usuarios
             .Include(u => u.Rol)
-            .Where(u => u.Estado == true) // Filtro del lado del servidor[cite: 11]
+            .Where(u => u.Estado == true) // Filtro del lado del servidor
             .OrderBy(u => u.Apellidos)
             .ThenBy(u => u.Nombres)
             .ToListAsync();
@@ -56,7 +56,7 @@ public class UsuarioService
         return true;
     }
 
-    // 4. Modificación Segura (Mapeo Selectivo)[cite: 11]
+    // 4. Modificación Segura (Mapeo Selectivo)
     public async Task<bool> ActualizarUsuarioAsync(Usuario usuarioModificado)
     {
         using var context = _dbFactory.CreateDbContext();
@@ -64,7 +64,7 @@ public class UsuarioService
         
         if (usuarioDb == null) return false;
 
-        // Solo se alteran las propiedades autorizadas[cite: 11]
+        // Solo se alteran las propiedades autorizadas
         usuarioDb.Nombres = usuarioModificado.Nombres;
         usuarioDb.Apellidos = usuarioModificado.Apellidos;
         usuarioDb.Telefono = usuarioModificado.Telefono;
@@ -75,7 +75,7 @@ public class UsuarioService
         return await context.SaveChangesAsync() > 0;
     }
 
-    // 5. Baja Lógica (Soft Delete)[cite: 11]
+    // 5. Baja Lógica (Soft Delete)
     public async Task<bool> DarDeBajaAsync(int id)
     {
         using var context = _dbFactory.CreateDbContext();
@@ -83,7 +83,7 @@ public class UsuarioService
         
         if (usuarioDb == null) return false;
 
-        // Preserva la integridad referencial histórica cambiando solo el estado[cite: 11]
+        // Preserva la integridad referencial histórica cambiando solo el estado
         usuarioDb.Estado = false; 
         context.Usuarios.Update(usuarioDb);
         
