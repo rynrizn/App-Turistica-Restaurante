@@ -232,19 +232,13 @@ else
             var pagado = await ReservaService.CompletarPagoAsync(factura.Id);
             if (pagado)
             {
-                Toast.ShowSuccess($"¡Pago completado! Factura {factura.NumeroFactura} registrada.");
+                Toast.ShowSuccess($"¡Pago completado! Factura {factura.NumeroFactura} registrada por Bs. {factura.Total:N2}.");
                 _reservaEnCobro = null;
                 await CargarReservas(false);
             }
-        }
-        else if (res.Factura != null)
-        {
-            var pagado = await ReservaService.CompletarPagoAsync(res.Factura.Id);
-            if (pagado)
+            else
             {
-                Toast.ShowSuccess("¡Pago completado sobre factura existente!");
-                _reservaEnCobro = null;
-                await CargarReservas(false);
+                Toast.ShowError("No se pudo procesar el pago.");
             }
         }
         _procesandoPago = false;
